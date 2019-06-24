@@ -5,7 +5,7 @@ import { PolymerElement } from "@polymer/polymer";
 import { CacheMixin } from "./cache-mixin.js";
 import { version } from "./rise-common-component-version.js";
 
-class RiseCommonComponent extends CacheMixin( PolymerElement ) {
+export class RiseCommonComponent extends CacheMixin( PolymerElement ) {
 
   // Event name constants
   static get EVENT_CONFIGURED() {
