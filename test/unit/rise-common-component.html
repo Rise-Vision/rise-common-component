@@ -1,0 +1,111 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+  <script src="../../node_modules/mocha/mocha.js"></script>
+  <script src="../../node_modules/chai/chai.js"></script>
+  <script src="../../node_modules/wct-mocha/wct-mocha.js"></script>
+  <script src="../../node_modules/sinon/pkg/sinon.js"></script>
+
+  <script type="text/javascript">
+    RisePlayerConfiguration = {
+      isConfigured: () => false
+    };
+  </script>
+  <script src="../../src/rise-common-component-config.js" type="module"></script>
+  <script src="../../src/rise-common-component.js" type="module"></script>
+
+</head>
+<body>
+<test-fixture id="test-block">
+  <template>
+    <rise-common-component></rise-common-component>
+  </template>
+</test-fixture>
+
+<script type="module">
+
+  suite("rise-common-component", () => {
+    let element;
+    let cache, logger;
+
+    setup(() => {
+      element = fixture("test-block");
+
+      cache = element.__proto__.__proto__;
+      logger = element.__proto__.__proto__.__proto__;
+
+      sinon.stub(cache, "initCache");
+      sinon.stub(logger, "initLogger");
+      sinon.stub(logger, "log");
+    });
+
+    teardown(()=>{
+      sinon.restore();
+    });
+
+    suite( "ready", () => {
+      let stub;
+
+      setup(()=>{
+        stub = sinon.stub( window, "addEventListener" );
+      });
+
+      test( "should listen for rise-components-ready and call init", () => {
+        element.ready();
+        assert.isTrue( stub.calledWith('rise-components-ready') );
+      });
+
+      test( "should call _init() if  RisePlayerConfiguration is configured", () => {
+        sinon.stub( element, '_init');
+
+        RisePlayerConfiguration.isConfigured = () => true ;
+        element.ready();
+
+        assert.isTrue( element._init.calledOnce );
+        assert.isFalse( stub.calledOnce );
+      });
+    });
+
+    suite( "init", () => {
+      test( "should listen for start' event", () => {
+        sinon.stub(element, "addEventListener");
+
+        element._init();
+        assert.isTrue(element.addEventListener.calledWith( "start" ));
+      });
+
+      test( "should init mixins ", () => {
+        element._init();
+
+        assert.isTrue( cache.initCache.called );
+        assert.isTrue( logger.initLogger.called );
+      });
+
+      test( "should raise 'configured' event", () => {
+        sinon.stub(element, "dispatchEvent");
+
+        element._init();
+        assert.equal(element.dispatchEvent.getCall(0).args[0].type, "configured");
+      });
+    });
+
+    suite( "'start' event", () => {
+      test( "should start", () => {
+        element.dispatchEvent( new CustomEvent( "start" ) );
+
+        assert.deepEqual( logger.log.getCall(0).args, ["info", "start received"] );
+      } );
+
+    });
+
+  });
+</script>
+
+</body>
+</html>
