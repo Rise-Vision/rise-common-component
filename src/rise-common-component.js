@@ -33,6 +33,7 @@ class RiseCommonComponent extends CacheMixin( PolymerElement ) {
 
   _init() {
     const name = this.tagName.toLowerCase();
+
     super.initCache({
       name
     });
