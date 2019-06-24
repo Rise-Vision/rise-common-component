@@ -1,4 +1,4 @@
-import { dedupingMixin } from "../node_modules/@polymer/polymer/lib/utils/mixin.js";
+import { dedupingMixin } from "@polymer/polymer/lib/utils/mixin.js";
 
 export const LoggerMixin = dedupingMixin( base => {
   const LOGGER_CONFIG = {

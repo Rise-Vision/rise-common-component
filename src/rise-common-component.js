@@ -3,7 +3,6 @@
 import { PolymerElement } from "@polymer/polymer";
 
 import { CacheMixin } from "./cache-mixin.js";
-import { config } from "./rise-common-component-config.js";
 import { version } from "./rise-common-component-version.js";
 
 class RiseCommonComponent extends CacheMixin( PolymerElement ) {
@@ -20,24 +19,6 @@ class RiseCommonComponent extends CacheMixin( PolymerElement ) {
     super();
   }
 
-  static get COMPONENT_NAME() {
-    return "rise-common-component";
-  }
-
-  static get CACHE_CONFIG() {
-    return {
-      name: RiseCommonComponent.COMPONENT_NAME
-    };
-  }
-
-  static get LOGGER_CONFIG() {
-    return {
-      name: RiseCommonComponent.COMPONENT_NAME,
-      id: this.id,
-      version
-    };
-  }
-
   ready() {
     super.ready();
 
@@ -51,8 +32,15 @@ class RiseCommonComponent extends CacheMixin( PolymerElement ) {
   }
 
   _init() {
-    super.initCache( RiseCommonComponent.CACHE_CONFIG );
-    super.initLogger( RiseCommonComponent.LOGGER_CONFIG );
+    const name = this.tagName.toLowerCase();
+    super.initCache({
+      name
+    });
+    super.initLogger({
+      name,
+      id: this.id,
+      version
+    });
 
     this.addEventListener( RiseCommonComponent.EVENT_START, this._handleStart, { once: true });
 

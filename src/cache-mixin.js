@@ -1,4 +1,4 @@
-import { dedupingMixin } from "../node_modules/@polymer/polymer/lib/utils/mixin.js";
+import { dedupingMixin } from "@polymer/polymer/lib/utils/mixin.js";
 import { LoggerMixin } from "./logger-mixin.js";
 
 export const CacheMixin = dedupingMixin( base => {
