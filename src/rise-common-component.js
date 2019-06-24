@@ -7,6 +7,19 @@ import { version } from "./rise-common-component-version.js";
 
 export class RiseCommonComponent extends CacheMixin( PolymerElement ) {
 
+  static get properties() {
+    return {
+      /**
+       * Component version; should override when implementing
+       */
+      version: {
+        type: String,
+        value: version,
+        readOnly: true
+      }
+    }
+  }
+
   // Event name constants
   static get EVENT_CONFIGURED() {
     return "configured";
@@ -22,6 +35,17 @@ export class RiseCommonComponent extends CacheMixin( PolymerElement ) {
   ready() {
     super.ready();
 
+    const name = this.tagName.toLowerCase();
+
+    super.initCache({
+      name
+    });
+    super.initLogger({
+      name,
+      id: this.id,
+      version: this.version
+    });
+
     if ( RisePlayerConfiguration.isConfigured()) {
       this._init();
     } else {
@@ -32,17 +56,6 @@ export class RiseCommonComponent extends CacheMixin( PolymerElement ) {
   }
 
   _init() {
-    const name = this.tagName.toLowerCase();
-
-    super.initCache({
-      name
-    });
-    super.initLogger({
-      name,
-      id: this.id,
-      version
-    });
-
     this.addEventListener( RiseCommonComponent.EVENT_START, this._handleStart, { once: true });
 
     this._sendEvent( RiseCommonComponent.EVENT_CONFIGURED );

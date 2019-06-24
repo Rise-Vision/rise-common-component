@@ -61,6 +61,13 @@
         assert.isTrue( stub.calledWith('rise-components-ready') );
       });
 
+      test( "should init mixins ", () => {
+        element.ready();
+
+        assert.isTrue( cache.initCache.called );
+        assert.isTrue( logger.initLogger.called );
+      });
+
       test( "should call _init() if  RisePlayerConfiguration is configured", () => {
         sinon.stub( element, '_init');
 
@@ -78,13 +85,6 @@
 
         element._init();
         assert.isTrue(element.addEventListener.calledWith( "start" ));
-      });
-
-      test( "should init mixins ", () => {
-        element._init();
-
-        assert.isTrue( cache.initCache.called );
-        assert.isTrue( logger.initLogger.called );
       });
 
       test( "should raise 'configured' event", () => {
