@@ -32,15 +32,13 @@
 
   suite("rise-common-component", () => {
     let element;
-    let cache, logger;
+    let logger;
 
     setup(() => {
       element = fixture("test-block");
 
-      cache = element.__proto__.__proto__;
-      logger = element.__proto__.__proto__.__proto__;
+      logger = element.__proto__.__proto__;
 
-      sinon.stub(cache, "initCache");
       sinon.stub(logger, "initLogger");
       sinon.stub(logger, "log");
     });
@@ -64,7 +62,6 @@
       test( "should init mixins ", () => {
         element.ready();
 
-        assert.isTrue( cache.initCache.called );
         assert.isTrue( logger.initLogger.called );
       });
 

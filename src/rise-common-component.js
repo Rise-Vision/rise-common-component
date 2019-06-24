@@ -2,10 +2,10 @@
 
 import { PolymerElement } from "@polymer/polymer";
 
-import { CacheMixin } from "./cache-mixin.js";
+import { LoggerMixin } from "./logger-mixin.js";
 import { version } from "./rise-common-component-version.js";
 
-export class RiseCommonComponent extends CacheMixin( PolymerElement ) {
+export class RiseCommonComponent extends LoggerMixin( PolymerElement ) {
 
   static get properties() {
     return {
@@ -35,13 +35,8 @@ export class RiseCommonComponent extends CacheMixin( PolymerElement ) {
   ready() {
     super.ready();
 
-    const name = this.tagName.toLowerCase();
-
-    super.initCache({
-      name
-    });
     super.initLogger({
-      name,
+      name: this.tagName.toLowerCase(),
       id: this.id,
       version: this.version
     });
