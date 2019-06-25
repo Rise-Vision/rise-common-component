@@ -26,7 +26,6 @@
   },
   "homepage": "https://github.com/Rise-Vision/rise-common-component#readme",
   "dependencies": {
-    "@polymer/iron-ajax": "^3.0.1",
     "@polymer/polymer": "3.1.0",
     "@webcomponents/webcomponentsjs": "^2.1.3"
   },
