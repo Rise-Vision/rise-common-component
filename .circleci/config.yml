@@ -45,7 +45,7 @@ jobs:
           VERSION=$(cat version-string/version)
           sed -i "
             s/__VERSION__/$VERSION/;
-          " src/rise-common-component-version.js
+          " src/rise-element-version.js
       - run: npm run build
       - persist_to_workspace:
           root: .
@@ -117,7 +117,7 @@ jobs:
           VERSION=$(cat version-string/version)
           TARGET=$WIDGETS_BASE/staging/components/rise-common-component/$VERSION/
           echo Deploying version $VERSION to rise-common-component
-          scripts/deploy-gcs.sh rise-common-component $TARGET
+          scripts/deploy-gcs.sh rise-element $TARGET
 
   deploy-e2e-page:
     parameters:
@@ -203,7 +203,7 @@ jobs:
           MAJOR=$(grep version package.json | grep -Po '[0-9]+' | head -1)
           TARGET=$WIDGETS_BASE/<< parameters.stage >>/components/rise-common-component/$MAJOR/
           echo Deploying << parameters.stage >> version of rise-common-component/$MAJOR
-          scripts/deploy-gcs.sh rise-common-component $TARGET
+          scripts/deploy-gcs.sh rise-element $TARGET
 
 workflows:
   workflow1:
@@ -212,16 +212,16 @@ workflows:
       - install:
           requires:
             - preconditions
-      - gcloud-setup:
-          requires:
-            - preconditions
-          filters:
-            branches:
-              only:
-                - /^(stage|staging)[/].*/
-                - master
-                - /^e2e[/].*/
-                - build/stable
+      # - gcloud-setup:
+      #     requires:
+      #       - preconditions
+      #     filters:
+      #       branches:
+      #         only:
+      #           - /^(stage|staging)[/].*/
+      #           - master
+      #           - /^e2e[/].*/
+      #           - build/stable
       - generate-version:
           requires:
             - preconditions
