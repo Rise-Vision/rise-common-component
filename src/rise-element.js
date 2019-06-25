@@ -3,9 +3,9 @@
 import { PolymerElement } from "@polymer/polymer";
 
 import { LoggerMixin } from "./logger-mixin.js";
-import { version } from "./rise-common-component-version.js";
+import { version } from "./rise-element-version.js";
 
-export class RiseCommonComponent extends LoggerMixin( PolymerElement ) {
+export class RiseElement extends LoggerMixin( PolymerElement ) {
 
   static get properties() {
     return {
@@ -51,9 +51,9 @@ export class RiseCommonComponent extends LoggerMixin( PolymerElement ) {
   }
 
   _init() {
-    this.addEventListener( RiseCommonComponent.EVENT_START, this._handleStart, { once: true });
+    this.addEventListener( RiseElement.EVENT_START, this._handleStart, { once: true });
 
-    this._sendEvent( RiseCommonComponent.EVENT_CONFIGURED );
+    this._sendEvent( RiseElement.EVENT_CONFIGURED );
   }
 
   _sendEvent( eventName, detail = {}) {
@@ -70,4 +70,4 @@ export class RiseCommonComponent extends LoggerMixin( PolymerElement ) {
 
 }
 
-customElements.define( "rise-common-component", RiseCommonComponent );
+customElements.define( "rise-element", RiseElement );

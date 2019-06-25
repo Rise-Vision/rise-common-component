@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Common utilities for Rise Vision Web components used in Template pages",
   "scripts": {
-    "prebuild": "eslint . && ./scripts/create_config.sh prod rise-common-component",
-    "build": "polymer build && ./scripts/extract-source.sh rise-common-component",
-    "pretest": "eslint . && ./scripts/create_config.sh test rise-common-component",
+    "prebuild": "eslint . && ./scripts/create_config.sh prod rise-element",
+    "build": "polymer build && ./scripts/extract-source.sh rise-element",
+    "pretest": "eslint . && ./scripts/create_config.sh test rise-element",
     "test": "polymer test",
     "pretty": "eslint . --fix"
   },

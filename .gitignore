@@ -1,7 +1,7 @@
 build/
 dist/
 node_modules/
-src/rise-common-component-config.js
+src/rise-element-config.js
 demo/build
 demo/node_modules
 
