@@ -127,7 +127,7 @@
         assert.equal(window.dispatchEvent.getCall(0).args[0].type, "component-uptime-result");
         assert.deepEqual(window.dispatchEvent.getCall(0).args[0].detail, {
           component_id: "rise-1", 
-          component_type: "rise-common-component",
+          component_type: "rise-element",
           error: false
         });
       });
