@@ -49,7 +49,7 @@
 
 
     suite( "connectedCallback", () => {
-      test( "should init uptime check ", () => {
+      test( "should init uptime check", () => {
         sinon.stub( window, "addEventListener" );
         element.connectedCallback();
         assert.isTrue( window.addEventListener.calledWith("component-uptime-request") );
@@ -57,7 +57,7 @@
     });
 
     suite( "disconnectedCallback", () => {
-      test( "should init uptime check ", () => {
+      test( "should stop listening for uptime", () => {
         sinon.stub( window, "removeEventListener" );
         element.disconnectedCallback();
         assert.isTrue( window.removeEventListener.calledWith("component-uptime-request") );
