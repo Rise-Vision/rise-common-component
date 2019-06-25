@@ -30,6 +30,18 @@ export class RiseElement extends LoggerMixin( PolymerElement ) {
 
   constructor() {
     super();
+    this._uptimeError = false;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this._uptimeHandler = this._handleUptimeRequest.bind( this );
+    window.addEventListener( "component-uptime-request", this._uptimeHandler );
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    window.removeEventListener( "component-uptime-request", this._uptimeHandler );
   }
 
   ready() {
@@ -66,6 +78,20 @@ export class RiseElement extends LoggerMixin( PolymerElement ) {
 
   _handleStart() {
     super.log( "info", "start received" );
+  }
+
+  _handleUptimeRequest() {
+    window.dispatchEvent( new CustomEvent( "component-uptime-result", {
+      detail: {
+        component_id: this.id,
+        component_type: this.tagName.toLowerCase(),
+        error: this._uptimeError
+      }
+    }));
+  }
+
+  _setUptimeError( value ) {
+    this._uptimeError = value;
   }
 
 }
