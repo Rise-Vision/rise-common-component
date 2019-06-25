@@ -24,7 +24,7 @@
 <body>
 <test-fixture id="test-block">
   <template>
-    <rise-element></rise-element>
+    <rise-element id="rise-1"></rise-element>
   </template>
 </test-fixture>
 
@@ -45,6 +45,23 @@
 
     teardown(()=>{
       sinon.restore();
+    });
+
+
+    suite( "connectedCallback", () => {
+      test( "should init uptime check", () => {
+        sinon.stub( window, "addEventListener" );
+        element.connectedCallback();
+        assert.isTrue( window.addEventListener.calledWith("component-uptime-request") );
+      });
+    });
+
+    suite( "disconnectedCallback", () => {
+      test( "should stop listening for uptime", () => {
+        sinon.stub( window, "removeEventListener" );
+        element.disconnectedCallback();
+        assert.isTrue( window.removeEventListener.calledWith("component-uptime-request") );
+      });
     });
 
     suite( "ready", () => {
@@ -72,7 +89,7 @@
         element.ready();
 
         assert.isTrue( element._init.calledOnce );
-        assert.isFalse( stub.calledOnce );
+        assert.isFalse( stub.calledTwice );
       });
     });
 
@@ -97,8 +114,51 @@
         element.dispatchEvent( new CustomEvent( "start" ) );
 
         assert.deepEqual( logger.log.getCall(0).args, ["info", "start received"] );
-      } );
+      });
+    });
 
+    suite( "_handleUptimeRequest", () => {
+      test( "should send 'component-uptime-result'", () => {
+        sinon.stub(window, "dispatchEvent");
+
+        element._handleUptimeRequest();
+
+        assert.isTrue(window.dispatchEvent.calledOnce);
+        assert.equal(window.dispatchEvent.getCall(0).args[0].type, "component-uptime-result");
+        assert.deepEqual(window.dispatchEvent.getCall(0).args[0].detail, {
+          component_id: "rise-1", 
+          component_type: "rise-element",
+          error: false
+        });
+      });
+
+      test( "should forward error status from _setUptimeError()", () => {
+        sinon.stub(window, "dispatchEvent");
+
+        element._handleUptimeRequest();
+
+        assert.isTrue(window.dispatchEvent.calledOnce);
+        assert.isFalse(window.dispatchEvent.getCall(0).args[0].detail.error);
+
+        element._setUptimeError(true);
+        element._handleUptimeRequest();
+
+        assert.isTrue(window.dispatchEvent.getCall(1).args[0].detail.error);
+      });
+    });
+
+    suite( "_setUptimeError", () => {
+      test( "should update _uptimeError value", () => {
+        element._setUptimeError(true);
+        assert.isTrue(element._uptimeError);
+
+        element._setUptimeError(false);
+        assert.isFalse(element._uptimeError);
+      });
+
+      test( "should report no error by default", () => {
+        assert.isFalse(element._uptimeError);
+      });
     });
 
   });
