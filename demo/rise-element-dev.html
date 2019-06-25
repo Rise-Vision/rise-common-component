@@ -1,0 +1,68 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js" async></script>
+  <!-- <script src="https://widgets.risevision.com/beta/common/config-test.min.js"></script> -->
+  <!-- <script src="https://widgets.risevision.com/beta/common/common-template.min.js"></script> -->
+  <script src="../src/rise-element.js" type="module"></script>
+</head>
+<body>
+
+  <rise-element
+    id="rise-element-1">
+  </rise-element>
+
+  <rise-element
+    id="rise-element-2">
+  </rise-element>
+
+<ul id="log">
+</ul>
+
+<script>
+  window.RisePlayerConfiguration = {
+    isConfigured: function(){return false},
+    Logger: {
+      info: _logFromLogger,
+      warning: _logFromLogger,
+      error: _logFromLogger
+    }
+  }
+  
+  function log(text) {
+    console.log(text);
+    var ul = document.getElementById("log");
+    var li = document.createElement("li");
+    li.appendChild(document.createTextNode(text));
+    ul.appendChild(li);
+  }
+
+  function _logFromLogger(componentData, event, details, additionalFields) {
+    log(event + " - " + componentData.id + " - " + JSON.stringify(details));
+  }
+
+  function configureComponents(elementId) {
+    var weatherElement = document.querySelector(elementId);
+
+    weatherElement.addEventListener( "configured", ( evt ) => {
+      log( "configured - " + elementId + " - " + JSON.stringify(evt.detail) );
+      weatherElement.dispatchEvent( new Event('start') );
+    } );
+  }
+
+  configureComponents('#rise-element-1');
+  configureComponents('#rise-element-2');
+
+  setTimeout(function() {
+    window.dispatchEvent( new Event('rise-components-ready') );
+  }, 500);
+
+  log('started');
+</script>  
+
+</body>
+</html>
