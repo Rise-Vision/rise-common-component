@@ -132,25 +132,32 @@
         });
       });
 
-      test( "should forward error status from _shouldReportUptimeError()", () => {
+      test( "should forward error status from _setUptimeError()", () => {
         sinon.stub(window, "dispatchEvent");
-        sinon.stub(element, "_shouldReportUptimeError").returns(false);
 
         element._handleUptimeRequest();
 
         assert.isTrue(window.dispatchEvent.calledOnce);
         assert.isFalse(window.dispatchEvent.getCall(0).args[0].detail.error);
 
-        element._shouldReportUptimeError.returns(true);
+        element._setUptimeError(true);
         element._handleUptimeRequest();
 
         assert.isTrue(window.dispatchEvent.getCall(1).args[0].detail.error);
       });
     });
 
-    suite( "_shouldReportUptimeError", () => {
+    suite( "_setUptimeError", () => {
+      test( "should update _uptimeError value", () => {
+        element._setUptimeError(true);
+        assert.isTrue(element._uptimeError);
+
+        element._setUptimeError(false);
+        assert.isFalse(element._uptimeError);
+      });
+
       test( "should report no error by default", () => {
-        assert.isFalse(element._shouldReportUptimeError());
+        assert.isFalse(element._uptimeError);
       });
     });
 

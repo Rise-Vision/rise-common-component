@@ -30,6 +30,7 @@ export class RiseCommonComponent extends LoggerMixin( PolymerElement ) {
 
   constructor() {
     super();
+    this._uptimeError = false;
   }
 
   connectedCallback() {
@@ -84,13 +85,13 @@ export class RiseCommonComponent extends LoggerMixin( PolymerElement ) {
       detail: {
         component_id: this.id,
         component_type: this.tagName.toLowerCase(),
-        error: this._shouldReportUptimeError()
+        error: this._uptimeError
       }
     }));
   }
 
-  _shouldReportUptimeError() {
-    return false;
+  _setUptimeError( value ) {
+    this._uptimeError = value;
   }
 
 }
