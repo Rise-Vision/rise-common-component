@@ -4,18 +4,73 @@
 
 `rise-common-component` is a Polymer 3 Web Component helper library.
 
-Instructions for demo page here:
-https://github.com/Rise-Vision/rise-common-component/blob/master/demo/README.md
+The `scripts` folder of the repo contains various scripts required for components' build and deployment
+
+Provides a common `RiseElement` which performs initialization tasks and logging for Rise Components. This element can be extended instead of `PolymerElement`.
+
+Provides a cacheMixin for using browser's local storage to store API responses.
 
 ## Usage
 
-TODO
+To use the `RiseElement` for building Rise Components, all that is needed is to extend it when declaring your element class:
+
+```
+class RiseDataWeather extends RiseElement {}
+```
+
+`RiseElement` provides a few utility functions. 
+`ready()` is called by the Component once initialized. 
+`_init()` is called once RisePlayerConfiguration has been initialized.
+`_handleStart()` is called once the Component is required to start playing.
+
+You don't have to extend these functions, but if you do, don't forget to call the `super.***()` function to ensure everything works as expected.
 
 ### Example
 
 ```
-TODO
+class RiseDataWeather extends RiseElement {
+
+  static get properties() {
+    return {
+      // your properties here
+    }
+  }
+
+  constructor() {
+    super();
+
+    this._setVersion( version );
+  }
+
+  ready() {
+    super.ready();
+
+    // your code here
+  }
+
+  _init() {
+    super._init();
+
+    // your code here
+  }
+
+  _handleStart() {
+    super._handleStart();
+
+    // your code here
+  }
+
+  // send events via _sendEvent
+  _myEvent(e) {
+    super._sendEvent( 'custom-event', e );
+  }
+
+}
 ```
+
+### Logging Mechanism
+
+A `loggerMixin` is enabled with `RiseElement`. This provides an interface that log to `RisePlayerConfiguration.Logger`
 
 ### Caching Mechanism
 
@@ -65,7 +120,13 @@ http://127.0.0.1:8081/components/rise-common-component/test/index.html
 You can also run a specific test page by targeting the page directly:
 
 ```
-http://127.0.0.1:8081/components/rise-common-component/test/unit/rise-common-component.html
+http://127.0.0.1:8081/components/rise-common-component/test/unit/rise-element.html
+```
+
+You can preview a Demo Page in your browser:
+
+```
+http://127.0.0.1:8081/components/rise-common-component/demo/rise-element.html
 ```
 
 
