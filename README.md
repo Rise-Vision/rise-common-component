@@ -20,10 +20,10 @@ class RiseDataWeather extends RiseElement {}
 
 `super._setVersion( version )` should always be called as part of the constructor. This will pass your component version to `RiseElement` for logging purposes.
 
-`RiseElement` provides a few utility functions. 
-`ready()` is called by the Component once initialized. 
-`_init()` is called once RisePlayerConfiguration has been initialized.
-`_handleStart()` is called once the Component is required to start playing.
+`RiseElement` provides a few utility functions:
+- `ready()` is called by the Component once initialized. 
+- `_init()` is called once RisePlayerConfiguration has been initialized.
+- `_handleStart()` is called once the Component is required to start playing.
 
 You don't have to extend these functions, but if you do, don't forget to call the `super.***()` function to ensure everything works as expected.
 
@@ -78,7 +78,7 @@ customElements.define( "rise-example", RiseExample );
 
 A `loggerMixin` is enabled with `RiseElement`. This provides an interface that log to `RisePlayerConfiguration.Logger`
 
-The mixin is automatically configured with your element's `id` and `version` (see `super._setVersion( version )` call in `constructor()`)
+The mixin is automatically configured with your element's `name`, `id` and `version` (see `super._setVersion( version )` call in `constructor()`)
 
 To log you can just use the `super.log()` function:
 
@@ -193,7 +193,7 @@ http://127.0.0.1:8081/components/rise-common-component/test/unit/rise-element.ht
 You can preview a Demo Page in your browser:
 
 ```
-http://127.0.0.1:8081/components/rise-common-component/demo/rise-element.html
+http://127.0.0.1:8081/components/rise-common-component/demo/rise-element-dev.html
 ```
 
 
