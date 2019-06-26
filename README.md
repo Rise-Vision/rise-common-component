@@ -4,17 +4,86 @@
 
 `rise-common-component` is a Polymer 3 Web Component helper library.
 
-Instructions for demo page here:
-https://github.com/Rise-Vision/rise-common-component/blob/master/demo/README.md
+The `scripts` folder of the repo contains various scripts required for components' build and deployment
+
+Provides a common `RiseElement` which performs initialization tasks and logging for Rise Components. This element can be extended instead of `PolymerElement`.
+
+Provides a cacheMixin for using browser's local storage to store API responses.
 
 ## Usage
 
-TODO
+To use the `RiseElement` for building Rise Components, all that is needed is to extend it when declaring your element class:
+
+```
+class RiseDataWeather extends RiseElement {}
+```
+
+`super._setVersion( version )` should always be called as part of the constructor. This will pass your component version to `RiseElement` for logging purposes.
+
+`RiseElement` provides a few utility functions:
+- `ready()` is called by the Component once initialized. 
+- `_init()` is called once RisePlayerConfiguration has been initialized.
+- `_handleStart()` is called once the Component is required to start playing.
+
+You don't have to extend these functions, but if you do, don't forget to call the `super.***()` function to ensure everything works as expected.
 
 ### Example
 
 ```
-TODO
+import { RiseElement } from "rise-common-component/src/rise-element.js";
+
+class RiseExample extends RiseElement {
+
+  static get properties() {
+    return {
+      // your properties here
+    }
+  }
+
+  constructor() {
+    super();
+
+    this._setVersion( version );
+  }
+
+  ready() {
+    super.ready();
+
+    // your code here
+  }
+
+  _init() {
+    super._init();
+
+    // your code here
+  }
+
+  _handleStart() {
+    super._handleStart();
+
+    // your code here
+  }
+
+  // send events via _sendEvent
+  _myEvent(e) {
+    super._sendEvent( 'custom-event', e );
+  }
+
+}
+
+customElements.define( "rise-example", RiseExample );
+```
+
+### Logging Mechanism
+
+A `loggerMixin` is enabled with `RiseElement`. This provides an interface that log to `RisePlayerConfiguration.Logger`
+
+The mixin is automatically configured with your element's `name`, `id` and `version` (see `super._setVersion( version )` call in `constructor()`)
+
+To log you can just use the `super.log()` function:
+
+```
+super.log( "error", "data error", { error: e.message });
 ```
 
 ### Caching Mechanism
@@ -22,6 +91,59 @@ TODO
 For caching arbitrary data responses, the mixin uses browsers Cache API. 
 
 Whenever the cached data is retrieved, the mixin checks the date header and delete it from cache in case it is expired. Also, to prevent cache from growing indefinitely, during mixin initialization all expired cache entries are deleted.
+
+To enable the mixin in your component you have to declare the mixin and call the `initCache` function with your desired cache name and optionally duration. Cache duration defaults to 2h. 
+
+To use the `cacheMixin`, there are two functions:
+
+`super.putCache( response )` adds your response to the cache.
+
+`super.getCache( url )` retrieves your response by resource `url` via a `Promise`. If the resource is not available or it has expired from Cache (see the `duration` variable), the promise will reject.
+
+
+#### Caching Example
+
+
+```
+import { RiseElement } from "rise-common-component/src/rise-element.js";
+import { CacheMixin } from "rise-common-component/src/cache-mixin.js";
+
+class RiseExample extends CacheMixin( RiseElement ) {
+
+...
+
+ready() {
+  super.ready();
+
+  super.initCache({
+    name: this.tagName.toLowerCase(),
+    duration: 1000 * 60 * 60
+  });
+}
+
+_requestData() {
+  fetch( this._getUrl()).then( res => {
+    this._handleResponse( res.clone());
+
+    super.putCache( res );
+  }).catch( this._handleFetchError.bind( this ));
+}
+
+_getData() {
+  let url = this._getUrl();
+
+  super.getCache( url ).then( response => {
+    this._logData( true );
+    response.text().then( this._processData.bind( this ));
+  }).catch(() => {
+    this._requestData();
+  });
+
+...
+
+}
+```
+
 
 ## Built With
 - [Polymer 3](https://www.polymer-project.org/)
@@ -65,7 +187,13 @@ http://127.0.0.1:8081/components/rise-common-component/test/index.html
 You can also run a specific test page by targeting the page directly:
 
 ```
-http://127.0.0.1:8081/components/rise-common-component/test/unit/rise-common-component.html
+http://127.0.0.1:8081/components/rise-common-component/test/unit/rise-element.html
+```
+
+You can preview a Demo Page in your browser:
+
+```
+http://127.0.0.1:8081/components/rise-common-component/demo/rise-element-dev.html
 ```
 
 
