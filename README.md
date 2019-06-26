@@ -18,6 +18,8 @@ To use the `RiseElement` for building Rise Components, all that is needed is to 
 class RiseDataWeather extends RiseElement {}
 ```
 
+`super._setVersion( version )` should always be called as part of the constructor. This will pass your component version to `RiseElement` for logging purposes.
+
 `RiseElement` provides a few utility functions. 
 `ready()` is called by the Component once initialized. 
 `_init()` is called once RisePlayerConfiguration has been initialized.
@@ -28,7 +30,9 @@ You don't have to extend these functions, but if you do, don't forget to call th
 ### Example
 
 ```
-class RiseDataWeather extends RiseElement {
+import { RiseElement } from "rise-common-component/src/rise-element.js";
+
+class RiseExample extends RiseElement {
 
   static get properties() {
     return {
@@ -66,17 +70,80 @@ class RiseDataWeather extends RiseElement {
   }
 
 }
+
+customElements.define( "rise-example", RiseExample );
 ```
 
 ### Logging Mechanism
 
 A `loggerMixin` is enabled with `RiseElement`. This provides an interface that log to `RisePlayerConfiguration.Logger`
 
+The mixin is automatically configured with your element's `id` and `version` (see `super._setVersion( version )` call in `constructor()`)
+
+To log you can just use the `super.log()` function:
+
+```
+super.log( "error", "data error", { error: e.message });
+```
+
 ### Caching Mechanism
 
 For caching arbitrary data responses, the mixin uses browsers Cache API. 
 
 Whenever the cached data is retrieved, the mixin checks the date header and delete it from cache in case it is expired. Also, to prevent cache from growing indefinitely, during mixin initialization all expired cache entries are deleted.
+
+To enable the mixin in your component you have to declare the mixin and call the `initCache` function with your desired cache name and optionally duration. Cache duration defaults to 2h. 
+
+To use the `cacheMixin`, there are two functions:
+
+`super.putCache( response )` adds your response to the cache.
+
+`super.getCache( url )` retrieves your response by resource `url` via a `Promise`. If the resource is not available or it has expired from Cache (see the `duration` variable), the promise will reject.
+
+
+#### Caching Example
+
+
+```
+import { RiseElement } from "rise-common-component/src/rise-element.js";
+import { CacheMixin } from "rise-common-component/src/cache-mixin.js";
+
+class RiseExample extends CacheMixin( RiseElement ) {
+
+...
+
+ready() {
+  super.ready();
+
+  super.initCache({
+    name: this.tagName.toLowerCase(),
+    duration: 1000 * 60 * 60
+  });
+}
+
+_requestData() {
+  fetch( this._getUrl()).then( res => {
+    this._handleResponse( res.clone());
+
+    super.putCache( res );
+  }).catch( this._handleFetchError.bind( this ));
+}
+
+_getData() {
+  let url = this._getUrl();
+
+  super.getCache( url ).then( response => {
+    this._logData( true );
+    response.text().then( this._processData.bind( this ));
+  }).catch(() => {
+    this._requestData();
+  });
+
+...
+
+}
+```
+
 
 ## Built With
 - [Polymer 3](https://www.polymer-project.org/)
