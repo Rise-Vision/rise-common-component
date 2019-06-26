@@ -105,6 +105,6 @@ export const RiseElementMixin = dedupingMixin( base => {
   }),
   RiseElement = RiseElementMixin( PolymerElement );
 
-if (!customElements.get('rise-element') {
-  customElements.define( "rise-element", RiseElement );  
+if ( !customElements.get( "rise-element" )) {
+  customElements.define( "rise-element", RiseElement );
 }
