@@ -144,6 +144,10 @@ _getData() {
 }
 ```
 
+### Uptime Mechanism
+`RiseElement` automatically respond to Uptime requests from Templates, reporting no errors.
+
+In case you need to specify an error state, you can set `RiseElement._setUptimeError()` to **true** based on your component logic. 
 
 ## Built With
 - [Polymer 3](https://www.polymer-project.org/)
