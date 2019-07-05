@@ -144,6 +144,71 @@ _getData() {
 }
 ```
 
+### Fetch Mechanism
+
+Used to fetch data from an API, the mixin uses browsers Fetch API. 
+
+The mixin can optionally use the cacheMixin for Caching purposes.
+
+To enable the mixin in your component you have to declare the mixin and call the `initFetch` function with your desired configuration. Default values are:
+```
+{
+  retry: 1000 * 60,
+  cooldown: 1000 * 60 * 10,
+  refresh: 1000 * 60 * 60,
+  count: 5
+}
+```
+
+Along with the configuration, the mixin requires data and error callbacks. Here's a sample call:
+```
+super.initFetch({}, this._handleResponse, this._handleError );
+```
+
+To use the `fetchMixin`, you can simply call:
+
+`super.fetch( url )` with the desired resource URL.
+
+The functionality will retrieve the data from the URL, and return it via the `_handleResponse` callback. In case an error is received, and after the retry count has been surpassed, the `_handleError` function will be called.
+
+
+#### Fetch Example
+
+
+```
+import { RiseElement } from "rise-common-component/src/rise-element.js";
+import { CacheMixin } from "rise-common-component/src/cache-mixin.js";
+import { FetchMixin } from "rise-common-component/src/fetch-mixin.js";
+
+class RiseExample extends FetchMixin ( CacheMixin( RiseElement )) {
+
+...
+
+ready() {
+  super.ready();
+
+  super.initFetch({}, this._handleResponse, this._handleError );
+  super.initCache({
+    name: this.tagName.toLowerCase()
+  });
+}
+
+_handleStart() {
+  super._handleStart();
+
+  super.fetch( this._getUrl());
+}
+
+_handleResponse( resp ) {
+  resp.text().then( this._processData.bind( this ));
+}
+
+_handleError() {
+  this._sendEvent( RiseData.EVENT_REQUEST_ERROR );
+}
+
+```
+
 ### Uptime Mechanism
 `RiseElement` automatically respond to Uptime requests from Templates, reporting no errors.
 

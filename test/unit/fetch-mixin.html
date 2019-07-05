@@ -1,0 +1,308 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+  <script src="../../node_modules/mocha/mocha.js"></script>
+  <script src="../../node_modules/chai/chai.js"></script>
+  <script src="../../node_modules/wct-mocha/wct-mocha.js"></script>
+  <script src="../../node_modules/sinon/pkg/sinon.js"></script>
+
+</head>
+<body>
+
+<script type="module">
+  import * as fetchModule from '../../src/fetch-mixin.js';
+
+  suite("fetch", () => {
+    let fetch, cache, logger, handleResponse, handleError;
+
+    setup(()=>{
+      let Fetch = fetchModule.FetchMixin(class {});
+      fetch = new Fetch();
+
+      cache = fetch.__proto__.__proto__;
+      logger = fetch.__proto__.__proto__;
+      sinon.stub(logger, "log");
+
+      sinon.stub(window, "fetch");
+
+      handleResponse = sinon.stub();
+      handleError = sinon.stub();
+      fetch.fetchConfig = {};
+      fetch.initFetch({
+        RETRY: 1000 * 60,
+        COOLDOWN: 1000 * 60 * 10,
+        REFRESH: 1000 * 60 * 60,
+        COUNT: 5
+      }, handleResponse, handleError );
+    });
+
+    teardown(()=>{
+      sinon.restore();
+    });
+
+    suite( "_getData", () => {
+      test( "should get the result from cache", done => {
+        cache.getCache = sinon.stub().resolves("text");
+        sinon.stub(fetch, "_requestData");
+
+        fetch._getData().then(() => {
+          assert.isTrue( cache.getCache.called );
+          assert.isTrue( handleResponse.called );
+          assert.isTrue( handleResponse.calledWith("text") );          
+
+          assert.isFalse( fetch._requestData.called );
+
+          done();
+        });
+      });
+
+      test( "should call API if cache is not available", done => {
+        sinon.stub(fetch, "_requestData");
+
+        window.fetch.resolves();
+
+        fetch._getData().then(() => {
+          assert.isFalse( handleResponse.called );
+
+          assert.isTrue( fetch._requestData.called );
+
+          done();
+        });
+      });
+
+      test( "should call API if cache is not available", done => {
+        cache.getCache = sinon.stub().rejects();
+        sinon.stub(fetch, "_requestData");
+
+        window.fetch.resolves();
+
+        fetch._getData().then(() => {
+          assert.isTrue( cache.getCache.called );
+          assert.isFalse( handleResponse.called );
+
+          assert.isTrue( fetch._requestData.called );
+
+          done();
+        });
+      });
+
+    });
+
+    suite( "_requestData", () => {
+      const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
+      let response;
+
+      setup(()=>{
+        response = new Response(validXmlData,{headers:{date: new Date()}});
+      });
+
+      test( "should cache requests", done => {
+        cache.getCache = sinon.stub().rejects();
+        cache.putCache = sinon.stub().resolves();
+        window.fetch.resolves(response);
+      
+        fetch._requestData().then(() => {
+          assert.isTrue( cache.putCache.called );
+
+          done();
+        });
+      });
+
+      test( "should process data on successful requests", done => {
+        cache.getCache = sinon.stub().rejects();
+        cache.putCache = sinon.stub().resolves();
+        window.fetch.resolves(response);
+      
+        fetch._requestData();
+        
+        setTimeout(() => {
+          assert.isTrue( handleResponse.called );
+          assert.isTrue( handleResponse.calledWith( response ) );          
+
+          done();
+        }, 10);
+      });
+
+      test( "should handle request failures", done => {
+        cache.getCache = sinon.stub().rejects();
+
+        window.fetch.rejects("dsa");
+      
+        sinon.stub(fetch, "_handleFetchError");
+
+        fetch._requestData().then(() => {
+          assert.isTrue( fetch._handleFetchError.called );
+
+          done();
+        });
+      });
+
+      suite( "data refresh mechanism", () => {
+        let clock;
+        
+        setup(() => {
+          clock = sinon.useFakeTimers();
+        });
+
+        test( "should use a debounce job for refresh", () => {
+          fetch._refresh();
+
+          assert.isObject( fetch._refreshDebounceJob );
+        });
+
+        test( "should handle fetch error and enqueue debouncer", () => {
+          sinon.stub(fetch, "_refresh");
+          fetch._requestRetryCount = 0;
+
+          fetch._handleFetchError();
+
+          assert.isTrue( fetch._requestRetryCount === 1 );
+          assert.isTrue( fetch._refresh.called );
+          assert.isTrue( fetch._refresh.calledWith(1000 * 60) );
+        });
+
+        test( "should debounce and call _getData after interval", () => {
+          sinon.stub(fetch, "_getData");
+
+          fetch._handleFetchError();
+
+          assert.isFalse( fetch._getData.called );
+
+          clock.tick(1000 * 30);
+
+          assert.isFalse( fetch._getData.called );
+
+          clock.tick(1000 * 30);
+          assert.isTrue( fetch._getData.called );
+        });
+
+        test( "should send error request and set API cooldown after 5 failures", () => {
+          sinon.stub(fetch, "_refresh");
+
+          fetch._requestRetryCount = 5;
+          fetch._handleFetchError();
+
+          assert.isTrue( fetch._requestRetryCount === 0 );
+          assert.isTrue( fetch._refresh.called );
+          assert.isTrue( fetch._refresh.calledWith(1000 * 60 * 10) );
+
+          assert.deepEqual( logger.log.getCall(0).args, ["error", "request error", {error: null}] );
+
+        });
+
+        test( "should raise 'request-error' on request failures", () => {
+          sinon.stub(fetch, "_refresh");
+
+          fetch._requestRetryCount = 5;
+        
+          fetch._handleFetchError( new Error("error") );
+
+          assert.deepEqual(logger.log.getCall(0).args, ["error", "request error", {error: "error"}]);
+
+          assert.isTrue( handleError.called );
+        });
+
+        test( "should debounce existing cooldown", () => {
+          sinon.stub(fetch, "_getData");
+
+          fetch._refresh( 5000 );
+
+          fetch._refresh( 100 );
+
+          clock.tick(100);
+
+          assert.isTrue( fetch._getData.calledOnce );
+
+          clock.tick(5000);
+
+          assert.isTrue( fetch._getData.calledOnce );
+        });
+
+        test( "should debounce existing cooldown 2", () => {
+          sinon.stub(fetch, "_getData");
+
+          fetch._refresh( 100 );
+
+          fetch._refresh( 5000 );
+
+          clock.tick(100);
+
+          assert.isFalse( fetch._getData.called );
+
+          clock.tick(5000);
+
+          assert.isTrue( fetch._getData.calledOnce );
+        });
+
+      });
+
+    });
+
+    suite( "_processWeatherData", () => {
+      const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
+      let response;
+
+      setup(()=>{
+        response = new Response(validXmlData,{headers:{date: new Date()}});
+      });
+
+      test( "should log data received only once for not cached requests", done => {
+        cache.getCache = sinon.stub().rejects();
+        cache.putCache = sinon.stub().resolves();
+        window.fetch.resolves(response);
+        fetch._logDataReceived = true;
+
+        fetch._getData(validXmlData).then(() => {
+          assert.isTrue(logger.log.calledOnce);
+          assert.deepEqual(logger.log.getCall(0).args, ["info", "data received",{cached: false}]);
+
+          fetch._getData(validXmlData).then(() => {
+            assert.isFalse(logger.log.calledTwice);
+
+            done();
+          },);
+        });
+      });
+
+      test( "should log data received only once for cached requests", done => {
+        cache.getCache = sinon.stub().resolves({
+          text: () => {
+            return Promise.resolve("text");
+          }
+        });
+        sinon.stub(fetch, "_requestData");
+        fetch._logDataReceived = true;
+
+        fetch._getData().then(() => {
+          assert.isTrue(logger.log.calledOnce);
+          assert.deepEqual(logger.log.getCall(0).args, ["info", "data received",{cached: true}]);
+
+          fetch._getData(validXmlData).then(() => {
+            assert.isFalse(logger.log.calledTwice);
+
+            done();
+          });
+        });
+      });
+
+      test( "should enqueue next request for 1 hour", () => {
+        sinon.stub(fetch, "_refresh");
+
+        fetch._processData();
+
+        assert.isTrue( fetch._refresh.called );
+        assert.isTrue( fetch._refresh.calledWith(60 * 60 * 1000));
+      });
+    });
+
+  });
+</script>
+
+</body>
+</html>
