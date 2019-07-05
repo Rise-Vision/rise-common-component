@@ -49,7 +49,7 @@ export const FetchMixin = dedupingMixin( base => {
       });
     }
 
-    _getCache() {
+    _tryGetCache() {
       if ( super.getCache ) {
         return super.getCache( this._url );
       } else {
@@ -58,7 +58,7 @@ export const FetchMixin = dedupingMixin( base => {
     }
 
     _getData() {
-      return this._getCache( this._url ).then( resp => {
+      return this._tryGetCache( this._url ).then( resp => {
         this._logData( true );
 
         this._processData( resp );
