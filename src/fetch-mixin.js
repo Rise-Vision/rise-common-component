@@ -32,12 +32,13 @@ export const FetchMixin = dedupingMixin( base => {
       this.processError = processError;
     }
 
-    fetch( url ) {
+    fetch( url, headers ) {
       if ( !url ) {
         return;
       }
 
       this._url = url;
+      this._headers = headers;
       this._requestRetryCount = 0;
 
       this._refresh( 0 );
@@ -68,9 +69,7 @@ export const FetchMixin = dedupingMixin( base => {
     }
 
     _requestData() {
-      return fetch( this._url, {
-        headers: { "X-Requested-With": "rise-data-weather" }
-      }).then( resp => {
+      return fetch( this._url, this._headers ).then( resp => {
         this._logData( false );
         this._processData( resp.clone());
 

@@ -13,32 +13,34 @@
   <script src="../../node_modules/sinon/pkg/sinon.js"></script>
 
 </head>
+
 <body>
 
 <script type="module">
   import * as fetchModule from '../../src/fetch-mixin.js';
 
   suite("fetch", () => {
-    let fetch, cache, logger, handleResponse, handleError;
+    let fetchMixin, cache, logger, handleResponse, handleError;
 
     setup(()=>{
       let Fetch = fetchModule.FetchMixin(class {});
-      fetch = new Fetch();
+      fetchMixin = new Fetch();
 
-      cache = fetch.__proto__.__proto__;
-      logger = fetch.__proto__.__proto__;
+      // Dummy for CacheMixin as it is not actually present
+      cache = fetchMixin.__proto__.__proto__;
+      logger = fetchMixin.__proto__.__proto__;
       sinon.stub(logger, "log");
 
       sinon.stub(window, "fetch");
 
       handleResponse = sinon.stub();
       handleError = sinon.stub();
-      fetch.fetchConfig = {};
-      fetch.initFetch({
-        RETRY: 1000 * 60,
-        COOLDOWN: 1000 * 60 * 10,
-        REFRESH: 1000 * 60 * 60,
-        COUNT: 5
+      fetchMixin.fetchConfig = {};
+      fetchMixin.initFetch({
+        retry: 1000 * 60,
+        cooldown: 1000 * 60 * 10,
+        refresh: 1000 * 60 * 60,
+        count: 5
       }, handleResponse, handleError );
     });
 
@@ -49,28 +51,28 @@
     suite( "_getData", () => {
       test( "should get the result from cache", done => {
         cache.getCache = sinon.stub().resolves("text");
-        sinon.stub(fetch, "_requestData");
+        sinon.stub(fetchMixin, "_requestData");
 
-        fetch._getData().then(() => {
+        fetchMixin._getData().then(() => {
           assert.isTrue( cache.getCache.called );
           assert.isTrue( handleResponse.called );
           assert.isTrue( handleResponse.calledWith("text") );          
 
-          assert.isFalse( fetch._requestData.called );
+          assert.isFalse( fetchMixin._requestData.called );
 
           done();
         });
       });
 
       test( "should call API if cache is not available", done => {
-        sinon.stub(fetch, "_requestData");
+        sinon.stub(fetchMixin, "_requestData");
 
         window.fetch.resolves();
 
-        fetch._getData().then(() => {
+        fetchMixin._getData().then(() => {
           assert.isFalse( handleResponse.called );
 
-          assert.isTrue( fetch._requestData.called );
+          assert.isTrue( fetchMixin._requestData.called );
 
           done();
         });
@@ -78,15 +80,15 @@
 
       test( "should call API if cache is not available", done => {
         cache.getCache = sinon.stub().rejects();
-        sinon.stub(fetch, "_requestData");
+        sinon.stub(fetchMixin, "_requestData");
 
         window.fetch.resolves();
 
-        fetch._getData().then(() => {
+        fetchMixin._getData().then(() => {
           assert.isTrue( cache.getCache.called );
           assert.isFalse( handleResponse.called );
 
-          assert.isTrue( fetch._requestData.called );
+          assert.isTrue( fetchMixin._requestData.called );
 
           done();
         });
@@ -107,7 +109,7 @@
         cache.putCache = sinon.stub().resolves();
         window.fetch.resolves(response);
       
-        fetch._requestData().then(() => {
+        fetchMixin._requestData().then(() => {
           assert.isTrue( cache.putCache.called );
 
           done();
@@ -119,7 +121,7 @@
         cache.putCache = sinon.stub().resolves();
         window.fetch.resolves(response);
       
-        fetch._requestData();
+        fetchMixin._requestData();
         
         setTimeout(() => {
           assert.isTrue( handleResponse.called );
@@ -134,10 +136,10 @@
 
         window.fetch.rejects("dsa");
       
-        sinon.stub(fetch, "_handleFetchError");
+        sinon.stub(fetchMixin, "_handleFetchError");
 
-        fetch._requestData().then(() => {
-          assert.isTrue( fetch._handleFetchError.called );
+        fetchMixin._requestData().then(() => {
+          assert.isTrue( fetchMixin._handleFetchError.called );
 
           done();
         });
@@ -151,57 +153,57 @@
         });
 
         test( "should use a debounce job for refresh", () => {
-          fetch._refresh();
+          fetchMixin._refresh();
 
-          assert.isObject( fetch._refreshDebounceJob );
+          assert.isObject( fetchMixin._refreshDebounceJob );
         });
 
         test( "should handle fetch error and enqueue debouncer", () => {
-          sinon.stub(fetch, "_refresh");
-          fetch._requestRetryCount = 0;
+          sinon.stub(fetchMixin.__proto__, "_refresh");
+          fetchMixin._requestRetryCount = 0;
 
-          fetch._handleFetchError();
+          fetchMixin._handleFetchError();
 
-          assert.isTrue( fetch._requestRetryCount === 1 );
-          assert.isTrue( fetch._refresh.called );
-          assert.isTrue( fetch._refresh.calledWith(1000 * 60) );
+          assert.isTrue( fetchMixin._requestRetryCount === 1 );
+          assert.isTrue( fetchMixin._refresh.called );
+          assert.isTrue( fetchMixin._refresh.calledWith(1000 * 60) );
         });
 
         test( "should debounce and call _getData after interval", () => {
-          sinon.stub(fetch, "_getData");
+          sinon.stub(fetchMixin, "_getData");
 
-          fetch._handleFetchError();
+          fetchMixin._handleFetchError();
 
-          assert.isFalse( fetch._getData.called );
-
-          clock.tick(1000 * 30);
-
-          assert.isFalse( fetch._getData.called );
+          assert.isFalse( fetchMixin._getData.called );
 
           clock.tick(1000 * 30);
-          assert.isTrue( fetch._getData.called );
+
+          assert.isFalse( fetchMixin._getData.called );
+
+          clock.tick(1000 * 30);
+          assert.isTrue( fetchMixin._getData.called );
         });
 
         test( "should send error request and set API cooldown after 5 failures", () => {
-          sinon.stub(fetch, "_refresh");
+          sinon.stub(fetchMixin, "_refresh");
 
-          fetch._requestRetryCount = 5;
-          fetch._handleFetchError();
+          fetchMixin._requestRetryCount = 5;
+          fetchMixin._handleFetchError();
 
-          assert.isTrue( fetch._requestRetryCount === 0 );
-          assert.isTrue( fetch._refresh.called );
-          assert.isTrue( fetch._refresh.calledWith(1000 * 60 * 10) );
+          assert.isTrue( fetchMixin._requestRetryCount === 0 );
+          assert.isTrue( fetchMixin._refresh.called );
+          assert.isTrue( fetchMixin._refresh.calledWith(1000 * 60 * 10) );
 
           assert.deepEqual( logger.log.getCall(0).args, ["error", "request error", {error: null}] );
 
         });
 
         test( "should raise 'request-error' on request failures", () => {
-          sinon.stub(fetch, "_refresh");
+          sinon.stub(fetchMixin, "_refresh");
 
-          fetch._requestRetryCount = 5;
+          fetchMixin._requestRetryCount = 5;
         
-          fetch._handleFetchError( new Error("error") );
+          fetchMixin._handleFetchError( new Error("error") );
 
           assert.deepEqual(logger.log.getCall(0).args, ["error", "request error", {error: "error"}]);
 
@@ -209,35 +211,35 @@
         });
 
         test( "should debounce existing cooldown", () => {
-          sinon.stub(fetch, "_getData");
+          sinon.stub(fetchMixin, "_getData");
 
-          fetch._refresh( 5000 );
+          fetchMixin._refresh( 5000 );
 
-          fetch._refresh( 100 );
+          fetchMixin._refresh( 100 );
 
           clock.tick(100);
 
-          assert.isTrue( fetch._getData.calledOnce );
+          assert.isTrue( fetchMixin._getData.calledOnce );
 
           clock.tick(5000);
 
-          assert.isTrue( fetch._getData.calledOnce );
+          assert.isTrue( fetchMixin._getData.calledOnce );
         });
 
         test( "should debounce existing cooldown 2", () => {
-          sinon.stub(fetch, "_getData");
+          sinon.stub(fetchMixin, "_getData");
 
-          fetch._refresh( 100 );
+          fetchMixin._refresh( 100 );
 
-          fetch._refresh( 5000 );
+          fetchMixin._refresh( 5000 );
 
           clock.tick(100);
 
-          assert.isFalse( fetch._getData.called );
+          assert.isFalse( fetchMixin._getData.called );
 
           clock.tick(5000);
 
-          assert.isTrue( fetch._getData.calledOnce );
+          assert.isTrue( fetchMixin._getData.calledOnce );
         });
 
       });
@@ -256,13 +258,13 @@
         cache.getCache = sinon.stub().rejects();
         cache.putCache = sinon.stub().resolves();
         window.fetch.resolves(response);
-        fetch._logDataReceived = true;
+        fetchMixin._logDataReceived = true;
 
-        fetch._getData(validXmlData).then(() => {
+        fetchMixin._getData(validXmlData).then(() => {
           assert.isTrue(logger.log.calledOnce);
           assert.deepEqual(logger.log.getCall(0).args, ["info", "data received",{cached: false}]);
 
-          fetch._getData(validXmlData).then(() => {
+          fetchMixin._getData(validXmlData).then(() => {
             assert.isFalse(logger.log.calledTwice);
 
             done();
@@ -276,14 +278,14 @@
             return Promise.resolve("text");
           }
         });
-        sinon.stub(fetch, "_requestData");
-        fetch._logDataReceived = true;
+        sinon.stub(fetchMixin, "_requestData");
+        fetchMixin._logDataReceived = true;
 
-        fetch._getData().then(() => {
+        fetchMixin._getData().then(() => {
           assert.isTrue(logger.log.calledOnce);
           assert.deepEqual(logger.log.getCall(0).args, ["info", "data received",{cached: true}]);
 
-          fetch._getData(validXmlData).then(() => {
+          fetchMixin._getData(validXmlData).then(() => {
             assert.isFalse(logger.log.calledTwice);
 
             done();
@@ -292,12 +294,12 @@
       });
 
       test( "should enqueue next request for 1 hour", () => {
-        sinon.stub(fetch, "_refresh");
+        sinon.stub(fetchMixin, "_refresh");
 
-        fetch._processData();
+        fetchMixin._processData();
 
-        assert.isTrue( fetch._refresh.called );
-        assert.isTrue( fetch._refresh.calledWith(60 * 60 * 1000));
+        assert.isTrue( fetchMixin._refresh.called );
+        assert.isTrue( fetchMixin._refresh.calledWith(60 * 60 * 1000));
       });
     });
 
