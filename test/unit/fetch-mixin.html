@@ -20,16 +20,16 @@
   import * as fetchModule from '../../src/fetch-mixin.js';
 
   suite("fetch", () => {
-    let fetchMixin, cache, logger, handleResponse, handleError;
+    let fetchMixin, cacheMixin, loggerMixin, handleResponse, handleError;
 
     setup(()=>{
       let Fetch = fetchModule.FetchMixin(class {});
       fetchMixin = new Fetch();
 
       // Dummy for CacheMixin as it is not actually present
-      cache = fetchMixin.__proto__.__proto__;
-      logger = fetchMixin.__proto__.__proto__;
-      sinon.stub(logger, "log");
+      cacheMixin = fetchMixin.__proto__.__proto__;
+      loggerMixin = fetchMixin.__proto__.__proto__;
+      sinon.stub(loggerMixin, "log");
 
       sinon.stub(window, "fetch");
 
@@ -50,11 +50,11 @@
 
     suite( "_getData", () => {
       test( "should get the result from cache", done => {
-        cache.getCache = sinon.stub().resolves("text");
+        cacheMixin.getCache = sinon.stub().resolves("text");
         sinon.stub(fetchMixin, "_requestData");
 
         fetchMixin._getData().then(() => {
-          assert.isTrue( cache.getCache.called );
+          assert.isTrue( cacheMixin.getCache.called );
           assert.isTrue( handleResponse.called );
           assert.isTrue( handleResponse.calledWith("text") );          
 
@@ -79,13 +79,13 @@
       });
 
       test( "should call API if cache is not available", done => {
-        cache.getCache = sinon.stub().rejects();
+        cacheMixin.getCache = sinon.stub().rejects();
         sinon.stub(fetchMixin, "_requestData");
 
         window.fetch.resolves();
 
         fetchMixin._getData().then(() => {
-          assert.isTrue( cache.getCache.called );
+          assert.isTrue( cacheMixin.getCache.called );
           assert.isFalse( handleResponse.called );
 
           assert.isTrue( fetchMixin._requestData.called );
@@ -105,20 +105,20 @@
       });
 
       test( "should cache requests", done => {
-        cache.getCache = sinon.stub().rejects();
-        cache.putCache = sinon.stub().resolves();
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
         window.fetch.resolves(response);
       
         fetchMixin._requestData().then(() => {
-          assert.isTrue( cache.putCache.called );
+          assert.isTrue( cacheMixin.putCache.called );
 
           done();
         });
       });
 
       test( "should process data on successful requests", done => {
-        cache.getCache = sinon.stub().rejects();
-        cache.putCache = sinon.stub().resolves();
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
         window.fetch.resolves(response);
       
         fetchMixin._requestData();
@@ -132,7 +132,7 @@
       });
 
       test( "should handle request failures", done => {
-        cache.getCache = sinon.stub().rejects();
+        cacheMixin.getCache = sinon.stub().rejects();
 
         window.fetch.rejects("dsa");
       
@@ -194,7 +194,7 @@
           assert.isTrue( fetchMixin._refresh.called );
           assert.isTrue( fetchMixin._refresh.calledWith(1000 * 60 * 10) );
 
-          assert.deepEqual( logger.log.getCall(0).args, ["error", "request error", {error: null}] );
+          assert.deepEqual( loggerMixin.log.getCall(0).args, ["error", "request error", {error: null}] );
 
         });
 
@@ -205,7 +205,7 @@
         
           fetchMixin._handleFetchError( new Error("error") );
 
-          assert.deepEqual(logger.log.getCall(0).args, ["error", "request error", {error: "error"}]);
+          assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "request error", {error: "error"}]);
 
           assert.isTrue( handleError.called );
         });
@@ -255,17 +255,17 @@
       });
 
       test( "should log data received only once for not cached requests", done => {
-        cache.getCache = sinon.stub().rejects();
-        cache.putCache = sinon.stub().resolves();
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
         window.fetch.resolves(response);
         fetchMixin._logDataReceived = true;
 
         fetchMixin._getData(validXmlData).then(() => {
-          assert.isTrue(logger.log.calledOnce);
-          assert.deepEqual(logger.log.getCall(0).args, ["info", "data received",{cached: false}]);
+          assert.isTrue(loggerMixin.log.calledOnce);
+          assert.deepEqual(loggerMixin.log.getCall(0).args, ["info", "data received",{cached: false}]);
 
           fetchMixin._getData(validXmlData).then(() => {
-            assert.isFalse(logger.log.calledTwice);
+            assert.isFalse(loggerMixin.log.calledTwice);
 
             done();
           },);
@@ -273,7 +273,7 @@
       });
 
       test( "should log data received only once for cached requests", done => {
-        cache.getCache = sinon.stub().resolves({
+        cacheMixin.getCache = sinon.stub().resolves({
           text: () => {
             return Promise.resolve("text");
           }
@@ -282,11 +282,11 @@
         fetchMixin._logDataReceived = true;
 
         fetchMixin._getData().then(() => {
-          assert.isTrue(logger.log.calledOnce);
-          assert.deepEqual(logger.log.getCall(0).args, ["info", "data received",{cached: true}]);
+          assert.isTrue(loggerMixin.log.calledOnce);
+          assert.deepEqual(loggerMixin.log.getCall(0).args, ["info", "data received",{cached: true}]);
 
           fetchMixin._getData(validXmlData).then(() => {
-            assert.isFalse(logger.log.calledTwice);
+            assert.isFalse(loggerMixin.log.calledTwice);
 
             done();
           });
