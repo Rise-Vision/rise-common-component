@@ -78,7 +78,7 @@
         });
       });
 
-      test( "should call API if cache is not available", done => {
+      test( "should call API if data is not cached", done => {
         cacheMixin.getCache = sinon.stub().rejects();
         sinon.stub(fetchMixin, "_requestData");
 
@@ -184,7 +184,7 @@
           assert.isTrue( fetchMixin._getData.called );
         });
 
-        test( "should send error request and set API cooldown after 5 failures", () => {
+        test( "should log error request and set API cooldown after 5 failures", () => {
           sinon.stub(fetchMixin, "_refresh");
 
           fetchMixin._requestRetryCount = 5;
@@ -198,7 +198,7 @@
 
         });
 
-        test( "should raise 'request-error' on request failures", () => {
+        test( "should call handleError on request failures", () => {
           sinon.stub(fetchMixin, "_refresh");
 
           fetchMixin._requestRetryCount = 5;
@@ -246,7 +246,7 @@
 
     });
 
-    suite( "_processWeatherData", () => {
+    suite( "_logData", () => {
       const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
       let response;
 
@@ -293,6 +293,9 @@
         });
       });
 
+    });
+
+    suite( "_processData", () => {
       test( "should enqueue next request for 1 hour", () => {
         sinon.stub(fetchMixin, "_refresh");
 
