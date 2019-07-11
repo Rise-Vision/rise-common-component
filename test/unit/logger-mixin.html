@@ -16,8 +16,11 @@
 <body>
 
 <script type="text/javascript">
+  let preview = false;
+
   RisePlayerConfiguration = {
-    Logger: {}
+    Logger: {},
+    isPreview: () => preview
   };
 </script>
 
@@ -110,6 +113,19 @@
         assert.isFalse( RisePlayerConfiguration.Logger.error.called );
       });
 
+      test( "should log when not in preview", () => {
+        preview = false;
+        logger.log("info");
+
+        assert.isTrue(RisePlayerConfiguration.Logger.info.called);
+      });
+
+      test( "should not log in preview", () => {
+        preview = true;
+        logger.log("info");
+
+        assert.isFalse(RisePlayerConfiguration.Logger.info.called);
+      });
     });
   });
 </script>
