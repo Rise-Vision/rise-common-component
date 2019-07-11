@@ -19,15 +19,15 @@ export const LoggerMixin = dedupingMixin( base => {
       Object.assign( this.loggerConfig, loggerConfig );
     }
 
-    get LOG_TYPE_INFO() {
+    static get LOG_TYPE_INFO() {
       return "info";
     }
 
-    get LOG_TYPE_WARNING() {
+    static get LOG_TYPE_WARNING() {
       return "warning";
     }
 
-    get LOG_TYPE_ERROR() {
+    static get LOG_TYPE_ERROR() {
       return "error";
     }
 
