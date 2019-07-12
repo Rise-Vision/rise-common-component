@@ -1,0 +1,57 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+  <script src="../../node_modules/mocha/mocha.js"></script>
+  <script src="../../node_modules/chai/chai.js"></script>
+  <script src="../../node_modules/wct-mocha/wct-mocha.js"></script>
+
+</head>
+<body>
+
+<script type="text/javascript">
+  RisePlayerConfiguration = {
+    Logger: {},
+    isPreview: () => false
+  };
+</script>
+
+<script type="module">
+  import * as validFilesModule from '../../src/valid-files-mixin.js';
+
+  const ValidFiles = validFilesModule.ValidFilesMixin(class {});
+  let validFiles;
+
+  setup(()=>{
+    validFiles = new ValidFiles();
+  });
+
+  suite("valid files", () => {
+
+    suite( "init", () => {
+      test( "should init validFiles", () => {
+        const validFilesConfig = {
+          name: "rise-common-component",
+          id: "elementId",
+          version: "__VERSION__"
+        };
+
+        validFiles.initValidFiles( validFilesConfig) ;
+
+        assert.deepEqual( validFiles.validFilesConfig, {
+          name: "rise-common-component",
+          id: "elementId",
+          version: "__VERSION__"
+        });
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
