@@ -145,6 +145,23 @@
         });
       });
 
+      test( "should handle request http response failures", done => {
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
+
+        response = new Response(validXmlData,{status: 500, headers:{date: new Date()}});
+
+        window.fetch.resolves(response);
+      
+        sinon.stub(fetchMixin, "_handleFetchError");
+
+        fetchMixin._requestData().then(() => {
+          assert.isTrue( fetchMixin._handleFetchError.called );
+
+          done();
+        });
+      });
+
       suite( "data refresh mechanism", () => {
         let clock;
         

@@ -70,10 +70,14 @@ export const FetchMixin = dedupingMixin( base => {
 
     _requestData() {
       return fetch( this._url, this._headers ).then( resp => {
-        this._logData( false );
-        this._processData( resp.clone());
+        if ( resp.ok ) {
+          this._logData( false );
+          this._processData( resp.clone());
 
-        super.putCache && super.putCache( resp );
+          super.putCache && super.putCache( resp );
+        } else {
+          throw new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
+        }
       }).catch( this._handleFetchError.bind( this ));
     }
 
