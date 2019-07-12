@@ -75,7 +75,7 @@ export const ValidFilesMixin = dedupingMixin( base => {
         return { validFiles: files, invalidFiles: [] };
       }
 
-      return this.filterInvalidFileTypes( files.split( "|", validTypes ));
+      return this.filterInvalidFileTypes( files.split( "|" ), validTypes );
     }
   }
 
