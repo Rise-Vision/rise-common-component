@@ -32,7 +32,6 @@
   });
 
   suite("valid files", () => {
-
     suite( "init", () => {
       test( "should init validFiles", () => {
         const validFilesConfig = {
@@ -50,6 +49,47 @@
         });
       });
     });
+
+    suite( "isValidFiles", () => {
+      test( "should return true if 'files' attribute is a non-empty String", () => {
+        assert.isTrue( validFiles.isValidFiles( "test" ) );
+      } );
+
+      test( "should return false if 'files' is not a String or empty String", () => {
+        assert.isFalse( validFiles.isValidFiles( 123 ) );
+        assert.isFalse( validFiles.isValidFiles( ["test1|test2"] ) );
+        assert.isFalse( validFiles.isValidFiles( "" ) );
+      } );
+
+      test( "should return true if 'files' is a String containing values separated by '|'", () => {
+        assert.isTrue( validFiles.isValidFiles( "test1|test2|test3" ) );
+      } );
+
+      test( "should return false if 'files' contains '|' with any empty value", () => {
+        assert.isFalse( validFiles.isValidFiles( "test|" ) );
+        assert.isFalse( validFiles.isValidFiles( "|test" ) );
+        assert.isFalse( validFiles.isValidFiles( "|" ) );
+        assert.isFalse( validFiles.isValidFiles( "test1|test2||test3" ) );
+      } );
+    } );
+
+    suite( "filterInvalidFileTypes", () => {
+      const imageFileTypes = [ "jpg", "jpeg", "png", "bmp", "svg", "gif", "webp" ];
+
+      test( "should return filtered files list", () => {
+        assert.deepEqual( validFiles.filterInvalidFileTypes( [ "test1.jpg", "test2.gif", "test3.txt", "test4.png", "test5.webm" ], imageFileTypes ), {
+          validFiles: [ "test1.jpg", "test2.gif", "test4.png" ],
+          invalidFiles: [ "test3.txt", "test5.webm" ]
+        } )
+      } );
+
+      test( "should return empty list of valid files", () => {
+        assert.deepEqual( validFiles.filterInvalidFileTypes( [ "test1.webm", "test2.text", "test3.mov" ], imageFileTypes ), {
+          validFiles: [],
+          invalidFiles: [ "test1.webm", "test2.text", "test3.mov" ]
+        } );
+      } );
+    } );
   });
 </script>
 
