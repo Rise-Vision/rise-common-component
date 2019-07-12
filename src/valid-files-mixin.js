@@ -51,10 +51,10 @@ export const ValidFilesMixin = dedupingMixin( base => {
       return files.split( "|" ).indexOf( "" ) === -1;
     }
 
-    filterInvalidFileTypes( files ) {
+    filterInvalidFileTypes( files, validTypes ) {
       let invalidFiles = [];
       const validFiles = files.filter( file => {
-        const valid = this.isValidFileType( file );
+        const valid = this.isValidFileType( file, validTypes );
 
         if ( !valid ) {
           invalidFiles.push( file );
@@ -66,12 +66,16 @@ export const ValidFilesMixin = dedupingMixin( base => {
       return { validFiles, invalidFiles };
     }
 
-    validateFiles( files ) {
+    validateFiles( files, validTypes ) {
       if ( !this.isValidFiles( files )) {
         return { validFiles: [], invalidFiles: [] };
       }
 
-      return this.filterInvalidFileTypes( files.split( "|" ));
+      if ( !validTypes || !validTypes.length ) {
+        return { validFiles: files, invalidFiles: [] };
+      }
+
+      return this.filterInvalidFileTypes( files.split( "|", validTypes ));
     }
   }
 
