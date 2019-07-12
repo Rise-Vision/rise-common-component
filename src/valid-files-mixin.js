@@ -1,4 +1,5 @@
 import { dedupingMixin } from "@polymer/polymer/lib/utils/mixin.js";
+import { LoggerMixin } from "./logger-mixin";
 
 export const ValidFilesMixin = dedupingMixin( base => {
   const VALID_FILES_CONFIG = {
@@ -7,7 +8,7 @@ export const ValidFilesMixin = dedupingMixin( base => {
     version: "1.0"
   };
 
-  class ValidFiles extends base {
+  class ValidFiles extends LoggerMixin( base ) {
     constructor() {
       super();
 
@@ -61,6 +62,10 @@ export const ValidFilesMixin = dedupingMixin( base => {
         }
 
         return valid;
+      });
+
+      invalidFiles.forEach( invalidFile => {
+        this.log( ValidFiles.LOG_TYPE_ERROR, "format-invalid", null, { file: invalidFile });
       });
 
       return { validFiles, invalidFiles };

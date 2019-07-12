@@ -10,7 +10,7 @@
   <script src="../../node_modules/mocha/mocha.js"></script>
   <script src="../../node_modules/chai/chai.js"></script>
   <script src="../../node_modules/wct-mocha/wct-mocha.js"></script>
-
+  <script src="../../node_modules/sinon/pkg/sinon.js"></script>
 </head>
 <body>
 
@@ -76,6 +76,16 @@
     suite( "filterInvalidFileTypes", () => {
       const imageFileTypes = [ "jpg", "jpeg", "png", "bmp", "svg", "gif", "webp" ];
 
+      setup(()=>{
+        RisePlayerConfiguration.Logger.info = sinon.spy();
+        RisePlayerConfiguration.Logger.warning = sinon.spy();
+        RisePlayerConfiguration.Logger.error = sinon.spy();
+      });
+
+      teardown(()=>{
+        RisePlayerConfiguration.Logger = {};
+      });
+
       test( "should return filtered files list", () => {
         assert.deepEqual( validFiles.filterInvalidFileTypes( [ "test1.jpg", "test2.gif", "test3.txt", "test4.png", "test5.webm" ], imageFileTypes ), {
           validFiles: [ "test1.jpg", "test2.gif", "test4.png" ],
@@ -89,6 +99,16 @@
           invalidFiles: [ "test1.webm", "test2.text", "test3.mov" ]
         } );
       } );
+
+      test( "should log a 'format-invalid' error for each invalid file", () => {
+        validFiles.filterInvalidFileTypes( [ "test1.jpg", "test2.jpg", "test3.png"], [ "png"] );
+
+        assert.equal( RisePlayerConfiguration.Logger.error.callCount, 2 );
+        assert.equal( RisePlayerConfiguration.Logger.error.getCall(0).args[1], "format-invalid" );
+        assert.equal( RisePlayerConfiguration.Logger.error.getCall(1).args[1], "format-invalid" );
+        assert.deepEqual( RisePlayerConfiguration.Logger.error.getCall(0).args[3], { file: "test1.jpg" });
+        assert.deepEqual( RisePlayerConfiguration.Logger.error.getCall(1).args[3], { file: "test2.jpg" });
+      } )
     } );
   });
 </script>
