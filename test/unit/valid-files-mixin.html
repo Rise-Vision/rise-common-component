@@ -76,15 +76,15 @@
     suite( "filterInvalidFileTypes", () => {
       const imageFileTypes = [ "jpg", "jpeg", "png", "bmp", "svg", "gif", "webp" ];
 
-      setup(()=>{
+      setup( () => {
         RisePlayerConfiguration.Logger.info = sinon.spy();
         RisePlayerConfiguration.Logger.warning = sinon.spy();
         RisePlayerConfiguration.Logger.error = sinon.spy();
-      });
+      } );
 
-      teardown(()=>{
+      teardown( () => {
         RisePlayerConfiguration.Logger = {};
-      });
+      } );
 
       test( "should return filtered files list", () => {
         assert.deepEqual( validFiles.filterInvalidFileTypes( [ "test1.jpg", "test2.gif", "test3.txt", "test4.png", "test5.webm" ], imageFileTypes ), {
