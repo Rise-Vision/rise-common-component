@@ -19,7 +19,7 @@ export const ValidFilesMixin = dedupingMixin( base => {
       Object.assign( this.validFilesConfig, validFilesConfig );
     }
 
-    getStorageFileFormat( filePath ) {
+    _getStorageFileFormat( filePath ) {
       if ( !filePath || typeof filePath !== "string" ) {
         return "";
       }
@@ -27,8 +27,8 @@ export const ValidFilesMixin = dedupingMixin( base => {
       return filePath.substr( filePath.lastIndexOf( "." ) + 1 ).toLowerCase();
     }
 
-    isValidFileType( path, validTypes ) {
-      const format = this.getStorageFileFormat( path );
+    _isValidFileType( path, validTypes ) {
+      const format = this._getStorageFileFormat( path );
 
       for ( let i = 0, len = validTypes.length; i < len; i++ ) {
         if ( format.indexOf( validTypes[ i ]) !== -1 ) {
@@ -39,7 +39,7 @@ export const ValidFilesMixin = dedupingMixin( base => {
       return false;
     }
 
-    isValidFiles( files ) {
+    _isValidFiles( files ) {
       if ( !files || !Array.isArray( files )) {
         return false;
       }
@@ -51,10 +51,10 @@ export const ValidFilesMixin = dedupingMixin( base => {
       return files.length > 0 && files.indexOf( "" ) === -1;
     }
 
-    filterInvalidFileTypes( files, validTypes ) {
+    _filterInvalidFileTypes( files, validTypes ) {
       let invalidFiles = [];
       const validFiles = files.filter( file => {
-        const valid = this.isValidFileType( file, validTypes );
+        const valid = this._isValidFileType( file, validTypes );
 
         if ( !valid ) {
           invalidFiles.push( file );
@@ -71,7 +71,7 @@ export const ValidFilesMixin = dedupingMixin( base => {
     }
 
     validateFiles( files, validTypes ) {
-      if ( !this.isValidFiles( files )) {
+      if ( !this._isValidFiles( files )) {
         return { validFiles: [], invalidFiles: [] };
       }
 
@@ -79,7 +79,7 @@ export const ValidFilesMixin = dedupingMixin( base => {
         return { validFiles: files, invalidFiles: [] };
       }
 
-      return this.filterInvalidFileTypes( files, validTypes );
+      return this._filterInvalidFileTypes( files, validTypes );
     }
   }
 

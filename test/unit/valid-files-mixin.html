@@ -50,26 +50,26 @@
       });
     });
 
-    suite( "isValidFiles", () => {
+    suite( "_isValidFiles", () => {
       test( "should return true if 'files' attribute is a non-empty Array", () => {
-        assert.isTrue( validFiles.isValidFiles( [ "test", "test2" ] ) );
+        assert.isTrue( validFiles._isValidFiles( [ "test", "test2" ] ) );
       } );
 
       test( "should return false if 'files' is not a non-empty Array", () => {
-        assert.isFalse( validFiles.isValidFiles( 123 ) );
-        assert.isFalse( validFiles.isValidFiles( "test1" ) );
-        assert.isFalse( validFiles.isValidFiles( [] ) );
+        assert.isFalse( validFiles._isValidFiles( 123 ) );
+        assert.isFalse( validFiles._isValidFiles( "test1" ) );
+        assert.isFalse( validFiles._isValidFiles( [] ) );
       } );
 
       test( "should return false if 'files' contains any empty entries", () => {
-        assert.isFalse( validFiles.isValidFiles( [ "test1", undefined ] ) );
-        assert.isFalse( validFiles.isValidFiles( [ "", "test1" ] ) );
-        assert.isFalse( validFiles.isValidFiles( [ null ] ) );
-        assert.isFalse( validFiles.isValidFiles( [ "test1", "test2", "", "test3" ] ) );
+        assert.isFalse( validFiles._isValidFiles( [ "test1", undefined ] ) );
+        assert.isFalse( validFiles._isValidFiles( [ "", "test1" ] ) );
+        assert.isFalse( validFiles._isValidFiles( [ null ] ) );
+        assert.isFalse( validFiles._isValidFiles( [ "test1", "test2", "", "test3" ] ) );
       } );
     } );
 
-    suite( "filterInvalidFileTypes", () => {
+    suite( "_filterInvalidFileTypes", () => {
       const imageFileTypes = [ "jpg", "jpeg", "png", "bmp", "svg", "gif", "webp" ];
 
       setup( () => {
@@ -83,21 +83,21 @@
       } );
 
       test( "should return filtered files list", () => {
-        assert.deepEqual( validFiles.filterInvalidFileTypes( [ "test1.jpg", "test2.gif", "test3.txt", "test4.png", "test5.webm" ], imageFileTypes ), {
+        assert.deepEqual( validFiles._filterInvalidFileTypes( [ "test1.jpg", "test2.gif", "test3.txt", "test4.png", "test5.webm" ], imageFileTypes ), {
           validFiles: [ "test1.jpg", "test2.gif", "test4.png" ],
           invalidFiles: [ "test3.txt", "test5.webm" ]
         } )
       } );
 
       test( "should return empty list of valid files", () => {
-        assert.deepEqual( validFiles.filterInvalidFileTypes( [ "test1.webm", "test2.text", "test3.mov" ], imageFileTypes ), {
+        assert.deepEqual( validFiles._filterInvalidFileTypes( [ "test1.webm", "test2.text", "test3.mov" ], imageFileTypes ), {
           validFiles: [],
           invalidFiles: [ "test1.webm", "test2.text", "test3.mov" ]
         } );
       } );
 
       test( "should log a 'format-invalid' error for each invalid file", () => {
-        validFiles.filterInvalidFileTypes( [ "test1.jpg", "test2.jpg", "test3.png"], [ "png"] );
+        validFiles._filterInvalidFileTypes( [ "test1.jpg", "test2.jpg", "test3.png"], [ "png"] );
 
         assert.equal( RisePlayerConfiguration.Logger.error.callCount, 2 );
         assert.equal( RisePlayerConfiguration.Logger.error.getCall(0).args[1], "format-invalid" );
