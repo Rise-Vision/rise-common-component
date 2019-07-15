@@ -40,16 +40,15 @@ export const ValidFilesMixin = dedupingMixin( base => {
     }
 
     isValidFiles( files ) {
-      if ( !files || typeof files !== "string" ) {
+      if ( !files || !Array.isArray( files )) {
         return false;
       }
 
-      // single symbol
-      if ( files.indexOf( "|" ) === -1 ) {
-        return true;
+      if ( files.filter( f => !f ).length > 0 ) {
+        return false;
       }
 
-      return files.split( "|" ).indexOf( "" ) === -1;
+      return files.length > 0 && files.indexOf( "" ) === -1;
     }
 
     filterInvalidFileTypes( files, validTypes ) {
@@ -80,7 +79,7 @@ export const ValidFilesMixin = dedupingMixin( base => {
         return { validFiles: files, invalidFiles: [] };
       }
 
-      return this.filterInvalidFileTypes( files.split( "|" ), validTypes );
+      return this.filterInvalidFileTypes( files, validTypes );
     }
   }
 
