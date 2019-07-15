@@ -102,8 +102,8 @@
         assert.equal( RisePlayerConfiguration.Logger.error.callCount, 2 );
         assert.equal( RisePlayerConfiguration.Logger.error.getCall(0).args[1], "format-invalid" );
         assert.equal( RisePlayerConfiguration.Logger.error.getCall(1).args[1], "format-invalid" );
-        assert.deepEqual( RisePlayerConfiguration.Logger.error.getCall(0).args[3], { file: "test1.jpg" });
-        assert.deepEqual( RisePlayerConfiguration.Logger.error.getCall(1).args[3], { file: "test2.jpg" });
+        assert.deepEqual( RisePlayerConfiguration.Logger.error.getCall(0).args[3], { file_path: "test1.jpg" });
+        assert.deepEqual( RisePlayerConfiguration.Logger.error.getCall(1).args[3], { file_path: "test2.jpg" });
       } )
     } );
   });
