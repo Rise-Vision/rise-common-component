@@ -161,6 +161,14 @@
       });
     });
 
+    suite( "_sendDoneEvent", () => {
+      test( "should send 'report-done' event", () => {
+        sinon.stub(element, "_sendEvent");
+        element._sendDoneEvent(true);
+        assert.isTrue(element._sendEvent.calledWith("report-done", {done: true}));
+      });
+    });
+
   });
 </script>
 
