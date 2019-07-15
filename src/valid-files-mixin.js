@@ -64,8 +64,17 @@ export const ValidFilesMixin = dedupingMixin( base => {
       });
 
       invalidFiles.forEach( invalidFile => {
-        this.log( ValidFiles.LOG_TYPE_ERROR, "format-invalid", null, { file_path: invalidFile });
+        this.log( ValidFiles.LOG_TYPE_ERROR, "format-invalid", null, {
+          storage: {
+            configuration: "storage file",
+            file_form: this._getStorageFileFormat( invalidFile ),
+            file_path: invalidFile,
+            local_url: ""
+          }
+        });
       });
+
+      // { storage: this._getStorageData( invalidFile ) });
 
       return { validFiles, invalidFiles };
     }
