@@ -16,18 +16,21 @@
 <body>
 
 <script type="text/javascript">
+  let preview = false;
+
   RisePlayerConfiguration = {
-    Logger: {}
+    Logger: {},
+    isPreview: () => preview
   };
 </script>
 
 <script type="module">
   import * as loggerModule from '../../src/logger-mixin.js';
 
+  const Logger = loggerModule.LoggerMixin(class {});
   let logger;
 
   setup(()=>{
-    let Logger = loggerModule.LoggerMixin(class {});
     logger = new Logger();
 
     RisePlayerConfiguration.Logger.info = sinon.spy();
@@ -43,8 +46,9 @@
 
     suite( "init", () => {
       test( "should log with defaults", () => {
-        logger.log("info");
+        logger.log(Logger.LOG_TYPE_INFO);
 
+        assert.equal( 'info', Logger.LOG_TYPE_INFO );
         assert.isTrue( RisePlayerConfiguration.Logger.info.called );
         assert.deepEqual( RisePlayerConfiguration.Logger.info.getCall(0).args[0], {
           name: "logger-mixin",
@@ -60,7 +64,7 @@
           version: "__VERSION__"
         });
 
-        logger.log("info");
+        logger.log(Logger.LOG_TYPE_INFO);
 
         assert.isTrue( RisePlayerConfiguration.Logger.info.called );
         assert.deepEqual( RisePlayerConfiguration.Logger.info.getCall(0).args[0], {
@@ -73,13 +77,13 @@
 
     suite( "log", () => {
       test( "should call with correct parameters", () => {
-        logger.log("info", "event", "details", "additionalFields");
+        logger.log(Logger.LOG_TYPE_INFO, "event", "details", "additionalFields");
 
         assert.isTrue( RisePlayerConfiguration.Logger.info.calledWith(sinon.match.object, "event", "details", "additionalFields") );
       });
 
       test( "should log info", () => {
-        logger.log("info");
+        logger.log(Logger.LOG_TYPE_INFO);
 
         assert.isTrue( RisePlayerConfiguration.Logger.info.called );
         assert.isFalse( RisePlayerConfiguration.Logger.warning.called );
@@ -87,7 +91,7 @@
       });
 
       test( "should log warning", () => {
-        logger.log("warning");
+        logger.log(Logger.LOG_TYPE_WARNING);
 
         assert.isFalse( RisePlayerConfiguration.Logger.info.called );
         assert.isTrue( RisePlayerConfiguration.Logger.warning.called );
@@ -95,7 +99,7 @@
       });
 
       test( "should log error", () => {
-        logger.log("error");
+        logger.log(Logger.LOG_TYPE_ERROR);
 
         assert.isFalse( RisePlayerConfiguration.Logger.info.called );
         assert.isFalse( RisePlayerConfiguration.Logger.warning.called );
@@ -110,6 +114,19 @@
         assert.isFalse( RisePlayerConfiguration.Logger.error.called );
       });
 
+      test( "should log when not in preview", () => {
+        preview = false;
+        logger.log(Logger.LOG_TYPE_INFO);
+
+        assert.isTrue(RisePlayerConfiguration.Logger.info.called);
+      });
+
+      test( "should not log in preview", () => {
+        preview = true;
+        logger.log(Logger.LOG_TYPE_INFO);
+
+        assert.isFalse(RisePlayerConfiguration.Logger.info.called);
+      });
     });
   });
 </script>

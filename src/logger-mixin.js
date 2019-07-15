@@ -19,7 +19,23 @@ export const LoggerMixin = dedupingMixin( base => {
       Object.assign( this.loggerConfig, loggerConfig );
     }
 
+    static get LOG_TYPE_INFO() {
+      return "info";
+    }
+
+    static get LOG_TYPE_WARNING() {
+      return "warning";
+    }
+
+    static get LOG_TYPE_ERROR() {
+      return "error";
+    }
+
     log( type, event, details = null, additionalFields ) {
+      if ( RisePlayerConfiguration.isPreview()) {
+        return;
+      }
+
       switch ( type ) {
       case "info":
         RisePlayerConfiguration.Logger.info( this.loggerConfig, event, details, additionalFields );
