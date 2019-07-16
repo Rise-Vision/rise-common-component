@@ -74,8 +74,6 @@ export const ValidFilesMixin = dedupingMixin( base => {
         });
       });
 
-      // { storage: this._getStorageData( invalidFile ) });
-
       return { validFiles, invalidFiles };
     }
 
