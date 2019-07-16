@@ -1,0 +1,58 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+  <script src="../../node_modules/mocha/mocha.js"></script>
+  <script src="../../node_modules/chai/chai.js"></script>
+  <script src="../../node_modules/wct-mocha/wct-mocha.js"></script>
+  <script src="../../node_modules/sinon/pkg/sinon.js"></script>
+</head>
+<body>
+
+<script type="text/javascript">
+  const SAMPLE_VIDEOS = [
+    "risemedialibrary-7fa5ee92-7deb-450b-a8d5-e5ed648c575f/rise-video-demo/example_MP4_1280x720_10MB.mp4"
+  ];
+  const sampleUrl = path => `https://storage.googleapis.com/${ path }`;
+
+  RisePlayerConfiguration = {
+    Logger: {},
+    isConfigured: () => true,
+    isPreview: () => false
+  };
+</script>
+
+<script type="module">
+  import * as watchFilesModule from '../../src/watch-files-mixin.js';
+
+  const WatchFiles = watchFilesModule.WatchFilesMixin(class {});
+  let watchFiles;
+
+  setup(()=>{
+    watchFiles = new WatchFiles();
+  });
+
+  suite("watch files", () => {
+    suite( "init", () => {
+      test( "should init watchFiles", () => {
+        const watchFilesConfig = {
+          name: "rise-common-component",
+          id: "elementId",
+          version: "__VERSION__"
+        };
+
+        watchFiles.initWatchFiles( watchFilesConfig)  ;
+
+        assert.deepEqual( watchFiles.watchFilesConfig, watchFilesConfig );
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
