@@ -2,7 +2,6 @@
 
 import { dedupingMixin } from "@polymer/polymer/lib/utils/mixin.js";
 import { LoggerMixin } from "./logger-mixin";
-import { RiseElementMixin } from "./rise-element";
 
 export const WatchFilesMixin = dedupingMixin( base => {
   const WATCH_FILES_CONFIG = {
@@ -11,7 +10,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
     version: "1.0"
   };
 
-  class WatchFiles extends LoggerMixin( RiseElementMixin( base )) {
+  class WatchFiles extends LoggerMixin( base ) {
     constructor() {
       super();
 
