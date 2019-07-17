@@ -15,15 +15,21 @@
 <body>
 
 <script type="text/javascript">
-  const SAMPLE_VIDEOS = [
-    "risemedialibrary-7fa5ee92-7deb-450b-a8d5-e5ed648c575f/rise-video-demo/example_MP4_1280x720_10MB.mp4"
-  ];
-  const sampleUrl = path => `https://storage.googleapis.com/${ path }`;
+  const sampleUrl = path => `https://storage.googleapis.com/${ path }`; // TODO: Do I need this?
 
   RisePlayerConfiguration = {
-    Logger: {},
+    Logger: {
+      info: sinon.spy(),
+      error: sinon.spy(),
+      warning: sinon.spy()
+    },
     isConfigured: () => true,
-    isPreview: () => false
+    isPreview: () => false,
+    LocalStorage: {
+      watchSingleFile: (file, handler) => {
+        handler({ status: "CURRENT", filePath: file, fileUrl: sampleUrl( file ) });
+      }
+    }
   };
 </script>
 
@@ -37,7 +43,7 @@
     watchFiles = new WatchFiles();
   });
 
-  suite("watch files", () => {
+  suite( "watch files", () => {
     suite( "init", () => {
       test( "should init watchFiles", () => {
         const watchFilesConfig = {
@@ -51,7 +57,133 @@
         assert.deepEqual( watchFiles.watchFilesConfig, watchFilesConfig );
       });
     });
-  });
+
+    suite( "events", () => {
+      setup( () => {
+        sinon.spy( watchFiles, "watchedFileAddedCallback" );
+        sinon.spy( watchFiles, "watchedFileDeletedCallback" );
+        sinon.spy( watchFiles, "watchedFileErrorCallback" );
+      } );
+
+      teardown( () => {
+        watchFiles.watchedFileAddedCallback.restore();
+        watchFiles.watchedFileDeletedCallback.restore();
+        watchFiles.watchedFileErrorCallback.restore();
+      } );
+
+      test( "should handle adding files", () => {
+        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+
+        assert.equal( watchFiles.watchedFileAddedCallback.callCount, 2 );
+        assert.equal ( watchFiles.managedFiles.length, 2);
+      } );
+
+      test( "should handle file errors", () => {
+        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+
+        watchFiles._handleSingleFileUpdate( {
+          filePath: "foo.jpg",
+          fileUrl: sampleUrl( "foo.jpg" ),
+          status: "file-error",
+          errorMessage: "Network error",
+          errorDetail: "Detailed network error"
+        } );
+
+        assert.equal( watchFiles.watchedFileErrorCallback.callCount, 1 );
+        assert.equal (watchFiles.managedFiles.length, 1 );
+        assert.equal (watchFiles._managedFilesInError.length, 1 );
+      } );
+
+      test( "should handle deleting files", () => {
+        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+
+        watchFiles._handleSingleFileUpdate( {
+          filePath: "foo.jpg",
+          fileUrl: sampleUrl( "foo.jpg" ),
+          status: "deleted",
+        } );
+
+        assert.equal( watchFiles.watchedFileDeletedCallback.callCount, 1 );
+        assert.equal( watchFiles.managedFiles.length, 1);
+        assert.equal( watchFiles._managedFilesInError.length, 0);
+      } );
+    } );
+
+    suite( "ordering", () => {
+      setup( () => {
+        sinon.spy( watchFiles, "watchedFileAddedCallback" );
+      } );
+
+      teardown( () => {
+        watchFiles.watchedFileAddedCallback.restore();
+      } );
+
+      test( "should preserve order of files that come in out of order", done => {
+        const delays = {
+          "a.jpg": 50,
+          "b.jpg": 100,
+          "c.jpg": 0
+        };
+        const maxDelay = 100;
+
+        sinon.stub( RisePlayerConfiguration.LocalStorage, "watchSingleFile" ).callsFake( (file, handler) => {
+          setTimeout( () => {
+            handler( { status: "CURRENT", filePath: file, fileUrl: sampleUrl( file ) } );
+          }, delays[file]) ;
+        } );
+
+        watchFiles.startWatch( [ "a.jpg", "b.jpg", "c.jpg" ] );
+
+        setTimeout( () => {
+          const addedCalls = watchFiles.watchedFileAddedCallback.getCalls();
+
+          assert.isTrue( addedCalls[0].calledWithExactly( { filePath: "c.jpg" } ) );
+          assert.isTrue( addedCalls[1].calledWithExactly( { filePath: "a.jpg" } ) );
+          assert.isTrue( addedCalls[2].calledWithExactly( { filePath: "b.jpg" } ) );
+
+          assert.equal( watchFiles.getManagedFile( "a.jpg" ).order, 0);
+          assert.equal( watchFiles.getManagedFile( "b.jpg" ).order, 1);
+          assert.equal( watchFiles.getManagedFile( "c.jpg" ).order, 2);
+
+          RisePlayerConfiguration.LocalStorage.watchSingleFile.restore();
+          done();
+        }, maxDelay );
+      } );
+    } );
+
+    suite( "startWatch", () => {
+      test( "should initialize properties", () => {
+        const files = [ "a.jpg", "b.jpg" ];
+
+        watchFiles.startWatch( files );
+
+        assert.deepEqual( watchFiles._filesList, files );
+        assert.isTrue( watchFiles._watchInitiated );
+        assert.equal( watchFiles.managedFiles.length, 2);
+      } );
+
+      test( "should not reinitialize if watch has already been initiated", () => {
+        let managedFiles;
+
+        watchFiles.startWatch( [ "a.jpg", "b.jpg" ] );
+        managedFiles = watchFiles.managedFiles.slice();
+        watchFiles.startWatch( [ "c.jpg", "d.jpg" ] );
+
+        assert.deepEqual( watchFiles.managedFiles, managedFiles);
+      });
+    } );
+
+    suite( "stopWatch", () => {
+      test( "should reset properties", () => {
+        watchFiles.startWatch( [ "a.jpg", "b.jpg" ] );
+        watchFiles.stopWatch();
+
+        assert.isFalse( watchFiles._watchInitiated );
+        assert.isEmpty( watchFiles.managedFiles );
+        assert.isEmpty( watchFiles._filesList );
+      } );
+    } );
+  } );
 </script>
 
 </body>

@@ -1,5 +1,8 @@
+/* eslint-disable no-console, one-var */
+
 import { dedupingMixin } from "@polymer/polymer/lib/utils/mixin.js";
 import { LoggerMixin } from "./logger-mixin";
+import { RiseElementMixin } from "./rise-element";
 
 export const WatchFilesMixin = dedupingMixin( base => {
   const WATCH_FILES_CONFIG = {
@@ -8,7 +11,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
     version: "1.0"
   };
 
-  class WatchFiles extends LoggerMixin( base ) {
+  class WatchFiles extends LoggerMixin( RiseElementMixin( base )) {
     constructor() {
       super();
 
@@ -17,12 +20,23 @@ export const WatchFilesMixin = dedupingMixin( base => {
 
       this._watchInitiated = false;
       this._managedFilesInError = [];
+      this._filesList = [];
     }
-
-    // TODO: Error name constants
 
     initWatchFiles( watchFilesConfig ) {
       Object.assign( this.watchFilesConfig, watchFilesConfig );
+    }
+
+    watchedFileAddedCallback( details ) {
+      console.log( "watched file added", details );
+    }
+
+    watchedFileDeletedCallback( details ) {
+      console.log( "watched file deleted", details );
+    }
+
+    watchedFileErrorCallback( details ) {
+      console.log( "watched file error", details );
     }
 
     _getStorageFileFormat( filePath ) {
@@ -94,7 +108,9 @@ export const WatchFilesMixin = dedupingMixin( base => {
 
     startWatch( filesList ) {
       if ( !this._watchInitiated ) {
-        filesList.forEach( file => {
+        this._filesList = filesList.slice( 0 );
+
+        this._filesList.forEach( file => {
           RisePlayerConfiguration.LocalStorage.watchSingleFile(
             file, message => this._handleSingleFileUpdate( message )
           );
@@ -109,6 +125,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
       this.managedFiles = [];
       this._managedFilesInError = [];
       this._filesToRenderList = [];
+      this._filesList = [];
     }
 
     _handleSingleFileError( message ) {
@@ -134,7 +151,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
         "Invalid response with status code [CODE]"
        */
 
-      this._log( WatchFiles.LOG_TYPE_ERROR, "image-rls-error", {
+      this.log( WatchFiles.LOG_TYPE_ERROR, "image-rls-error", {
         errorMessage: message.errorMessage,
         errorDetail: message.errorDetail
       }, {
@@ -151,7 +168,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
         this._manageFile({ filePath, status: "deleted" });
       }
 
-      super._sendEvent( "watched-file-error", details );
+      this.watchedFileErrorCallback( details );
     }
 
     _handleSingleFileUpdate( message ) {
@@ -174,11 +191,11 @@ export const WatchFilesMixin = dedupingMixin( base => {
       this._manageFileInError( message, true );
 
       if ( status.toUpperCase() === "DELETED" ) {
-        super._sendEvent( "watched-file-deleted", { filePath });
+        this.watchedFileDeletedCallback({ filePath });
       }
 
       if ( status.toUpperCase() === "CURRENT" ) {
-        super._sendEvent( "watched-file-added", { filePath });
+        this.watchedFileAddedCallback({ filePath });
       }
     }
   }
