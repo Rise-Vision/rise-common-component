@@ -150,7 +150,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
         "Invalid response with status code [CODE]"
        */
 
-      this.log( WatchFiles.LOG_TYPE_ERROR, "image-rls-error", {
+      this.log( WatchFiles.LOG_TYPE_ERROR, "file-rls-error", {
         errorMessage: message.errorMessage,
         errorDetail: message.errorDetail
       }, {
