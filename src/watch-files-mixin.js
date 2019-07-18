@@ -1,5 +1,3 @@
-/* eslint-disable no-console, one-var */
-
 import { dedupingMixin } from "@polymer/polymer/lib/utils/mixin.js";
 import { LoggerMixin } from "./logger-mixin";
 
@@ -26,17 +24,11 @@ export const WatchFilesMixin = dedupingMixin( base => {
       Object.assign( this.watchFilesConfig, watchFilesConfig );
     }
 
-    watchedFileAddedCallback( details ) {
-      console.log( "watched file added", details );
-    }
+    watchedFileAddedCallback() {}
 
-    watchedFileDeletedCallback( details ) {
-      console.log( "watched file deleted", details );
-    }
+    watchedFileDeletedCallback() {}
 
-    watchedFileErrorCallback( details ) {
-      console.log( "watched file error", details );
-    }
+    watchedFileErrorCallback() {}
 
     _getStorageFileFormat( filePath ) {
       if ( !filePath || typeof filePath !== "string" ) {
