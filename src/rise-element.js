@@ -99,6 +99,10 @@ export const RiseElementMixin = dedupingMixin( base => {
         this._uptimeError = value;
       }
 
+      _sendDoneEvent( done ) {
+        this._sendEvent( "report-done", { done });
+      }
+
     }
 
     return riseElement;

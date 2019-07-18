@@ -212,7 +212,10 @@ _handleError() {
 ### Uptime Mechanism
 `RiseElement` automatically respond to Uptime requests from Templates, reporting no errors.
 
-In case you need to specify an error state, you can set `RiseElement._setUptimeError()` to **true** based on your component logic. 
+In case you need to specify an error state, you can set `RiseElement._setUptimeError()` to **true** based on your component logic.
+
+### Play Until Done
+`RiseElement` provides the `_sendDoneEvent(done)` method for components to report when it is done.
 
 ## Built With
 - [Polymer 3](https://www.polymer-project.org/)
