@@ -8,7 +8,8 @@ export const FetchMixin = dedupingMixin( base => {
       retry: 1000 * 60,
       cooldown: 1000 * 60 * 10,
       refresh: 1000 * 60 * 60,
-      count: 5
+      count: 5,
+      useCacheIfOffline: false
     },
     fetchBase = LoggerMixin( base );
 
@@ -50,9 +51,9 @@ export const FetchMixin = dedupingMixin( base => {
       });
     }
 
-    _tryGetCache() {
+    _tryGetCache( resolveIfExpired ) {
       if ( super.getCache ) {
-        return super.getCache( this._url );
+        return super.getCache( this._url, resolveIfExpired );
       } else {
         return Promise.reject();
       }
@@ -78,7 +79,37 @@ export const FetchMixin = dedupingMixin( base => {
         } else {
           throw new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
         }
-      }).catch( this._handleFetchError.bind( this ));
+      }).catch( err => {
+        return this._tryOfflineCache().catch(() => {
+          this._handleFetchError( err );
+        });
+      });
+    }
+
+    _tryOfflineCache() {
+      var offlinePromise = Promise.reject();
+
+      if ( this.fetchConfig.useCacheIfOffline ) {
+        offlinePromise = this._isOffline().then(() => {
+          return this._tryGetCache( this._url, true );
+        });
+      }
+
+      return offlinePromise.then( resp => {
+        super.log( "info", "offline - using cache" );
+
+        this._processData( resp );
+      });
+    }
+
+    _isOffline() {
+      return fetch( "https://widgets.risevision.com", { method: "HEAD" })
+        .then(() => {
+          return Promise.reject();
+        })
+        .catch(() => {
+          return Promise.resolve();
+        });
     }
 
     _processData( resp ) {
@@ -113,4 +144,4 @@ export const FetchMixin = dedupingMixin( base => {
   }
 
   return Fetch;
-})
+});

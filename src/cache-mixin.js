@@ -5,6 +5,7 @@ export const CacheMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
       name: "cache-mixin",
       duration: 1000 * 60 * 60 * 2,
+      preserveExpired: false
     },
     cacheBase = LoggerMixin( base );
 
@@ -18,7 +19,9 @@ export const CacheMixin = dedupingMixin( base => {
     initCache( cacheConfig ) {
       Object.assign( this.cacheConfig, cacheConfig );
 
-      this._deleteExpiredCache();
+      if ( !this.cacheConfig.preserveExpired ) {
+        this._deleteExpiredCache();
+      }
     }
 
     _getCache() {
@@ -55,7 +58,7 @@ export const CacheMixin = dedupingMixin( base => {
       });
     }
 
-    getCache( url ) {
+    getCache( url, resolveIfExpired ) {
       var _cache;
 
       return this._getCache().then( cache => {
@@ -65,11 +68,13 @@ export const CacheMixin = dedupingMixin( base => {
         if ( response ) {
           const date = new Date( response.headers.get( "date" ));
 
-          if ( Date.now() < date.getTime() + this.cacheConfig.duration ) {
+          if ( resolveIfExpired || Date.now() < date.getTime() + this.cacheConfig.duration ) {
             return Promise.resolve( response );
 
           } else {
-            _cache.delete( url );
+            if ( !this.cacheConfig.preserveExpired ) {
+              _cache.delete( url );
+            }
 
             return Promise.reject();
           }
@@ -81,4 +86,4 @@ export const CacheMixin = dedupingMixin( base => {
   }
 
   return Cache;
-})
+});
