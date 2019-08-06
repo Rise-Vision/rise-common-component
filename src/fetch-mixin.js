@@ -51,16 +51,16 @@ export const FetchMixin = dedupingMixin( base => {
       });
     }
 
-    _tryGetCache( resolveIfExpired ) {
+    _tryGetCache( ignoreExpiration ) {
       if ( super.getCache ) {
-        return super.getCache( this._url, resolveIfExpired );
+        return super.getCache( this._url, ignoreExpiration );
       } else {
         return Promise.reject();
       }
     }
 
     _getData() {
-      return this._tryGetCache( this._url ).then( resp => {
+      return this._tryGetCache( false ).then( resp => {
         this._logData( true );
 
         this._processData( resp );
@@ -87,29 +87,27 @@ export const FetchMixin = dedupingMixin( base => {
     }
 
     _tryOfflineCache() {
-      var offlinePromise = Promise.reject();
-
       if ( this.fetchConfig.useCacheIfOffline ) {
-        offlinePromise = this._isOffline().then(() => {
-          return this._tryGetCache( this._url, true );
+        return this._isOffline().then(() => {
+          return this._tryGetCache( true );
+        }).then( resp => {
+          // offline - using cache
+          this._processData( resp );
         });
+      } else {
+        return Promise.reject();
       }
-
-      return offlinePromise.then( resp => {
-        super.log( "info", "offline - using cache" );
-
-        this._processData( resp );
-      });
     }
 
     _isOffline() {
-      return fetch( "https://widgets.risevision.com", { method: "HEAD" })
-        .then(() => {
-          return Promise.reject();
-        })
-        .catch(() => {
-          return Promise.resolve();
-        });
+      return new Promise(( resolve, reject ) => {
+        fetch( "https://widgets.risevision.com", { method: "HEAD" })
+          .then(() => {
+            reject();
+          }).catch(() => {
+            resolve();
+          });
+      });
     }
 
     _processData( resp ) {

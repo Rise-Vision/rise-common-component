@@ -58,7 +58,7 @@ export const CacheMixin = dedupingMixin( base => {
       });
     }
 
-    getCache( url, resolveIfExpired ) {
+    getCache( url, ignoreExpiration ) {
       var _cache;
 
       return this._getCache().then( cache => {
@@ -68,7 +68,7 @@ export const CacheMixin = dedupingMixin( base => {
         if ( response ) {
           const date = new Date( response.headers.get( "date" ));
 
-          if ( resolveIfExpired || Date.now() < date.getTime() + this.cacheConfig.duration ) {
+          if ( ignoreExpiration || Date.now() < date.getTime() + this.cacheConfig.duration ) {
             return Promise.resolve( response );
 
           } else {

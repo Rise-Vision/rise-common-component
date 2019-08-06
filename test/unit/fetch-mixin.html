@@ -162,6 +162,58 @@
         });
       });
 
+      test( "should handle request http response failures and return cached data if offline", done => {
+        fetchMixin.initFetch({
+          useCacheIfOffline: true
+        }, handleResponse, handleError );
+
+        cacheMixin.putCache = sinon.stub().resolves();
+        cacheMixin.getCache = sinon.stub().callsFake(function (url, ignoreExpiration) {
+          if (ignoreExpiration) {
+            return Promise.resolve(response);
+          } else {
+            return Promise.reject();
+          }
+        });
+
+        // Check for widgets.risevision.com will fail since fetch always rejects
+        window.fetch.rejects();
+
+        fetchMixin._requestData().then(() => {
+          assert.isTrue( handleResponse.called );
+          assert.isTrue( handleResponse.calledWith( response ) );
+
+          done();
+        });
+      });
+
+      test( "should handle request http response failures and fail if online", done => {
+        fetchMixin.initFetch({
+          useCacheIfOffline: true
+        }, handleResponse, handleError );
+
+        cacheMixin.putCache = sinon.stub().resolves();
+        cacheMixin.getCache = sinon.stub().callsFake(function (url, ignoreExpiration) {
+          if (ignoreExpiration) {
+            return Promise.resolve(response);
+          } else {
+            return Promise.reject();
+          }
+        });
+
+        window.fetch.onFirstCall().rejects();
+        // Check for widgets.risevision.com will succeed
+        window.fetch.onSecondCall().resolves(response);
+
+        sinon.stub(fetchMixin, "_handleFetchError");
+
+        fetchMixin._requestData().then(() => {
+          assert.isTrue( fetchMixin._handleFetchError.called );
+
+          done();
+        });
+      });
+
       suite( "data refresh mechanism", () => {
         let clock;
         
