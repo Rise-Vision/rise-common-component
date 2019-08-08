@@ -8,8 +8,7 @@ export const FetchMixin = dedupingMixin( base => {
       retry: 1000 * 60,
       cooldown: 1000 * 60 * 10,
       refresh: 1000 * 60 * 60,
-      count: 5,
-      useCacheIfOffline: false
+      count: 5
     },
     fetchBase = LoggerMixin( base );
 
@@ -31,6 +30,10 @@ export const FetchMixin = dedupingMixin( base => {
 
       this.processData = processData;
       this.processError = processError;
+
+      super.initCache && super.initCache({
+        refresh: this.fetchConfig.refresh
+      });
     }
 
     fetch( url, headers ) {
@@ -51,25 +54,27 @@ export const FetchMixin = dedupingMixin( base => {
       });
     }
 
-    _tryGetCache( ignoreExpiration ) {
+    _tryGetCache() {
       if ( super.getCache ) {
-        return super.getCache( this._url, ignoreExpiration );
+        return super.getCache( this._url );
       } else {
         return Promise.reject();
       }
     }
 
     _getData() {
-      return this._tryGetCache( false ).then( resp => {
+      return this._tryGetCache().then( resp => {
         this._logData( true );
 
-        this._processData( resp );
-      }).catch(() => {
-        this._requestData();
+        this._processData( Object.assign( resp.clone(), { isCached: true }));
+      }).catch(( cachedResp ) => {
+        cachedResp = cachedResp && cachedResp.clone ? Object.assign( cachedResp.clone(), { isCached: true }) : null;
+
+        this._requestData( cachedResp );
       });
     }
 
-    _requestData() {
+    _requestData( cachedResp ) {
       return fetch( this._url, this._headers ).then( resp => {
         if ( resp.ok ) {
           this._logData( false );
@@ -80,32 +85,21 @@ export const FetchMixin = dedupingMixin( base => {
           throw new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
         }
       }).catch( err => {
-        return this._tryOfflineCache().catch(() => {
-          this._handleFetchError( err );
+        return this._isOffline().then( isOffline => {
+          cachedResp && this._processData( Object.assign( cachedResp, { isOffline }));
+
+          this._handleFetchError( Object.assign( err, { isOffline }));
         });
       });
     }
 
-    _tryOfflineCache() {
-      if ( this.fetchConfig.useCacheIfOffline ) {
-        return this._isOffline().then(() => {
-          return this._tryGetCache( true );
-        }).then( resp => {
-          // offline - using cache
-          this._processData( resp );
-        });
-      } else {
-        return Promise.reject();
-      }
-    }
-
     _isOffline() {
-      return new Promise(( resolve, reject ) => {
+      return new Promise(( resolve ) => {
         fetch( "https://widgets.risevision.com", { method: "HEAD" })
           .then(() => {
-            reject();
+            resolve( false );
           }).catch(() => {
-            resolve();
+            resolve( true );
           });
       });
     }
@@ -131,9 +125,13 @@ export const FetchMixin = dedupingMixin( base => {
       } else {
         this._requestRetryCount = 0;
 
-        super.log( "error", "request error", { error: err ? err.message : null });
+        if ( err && err.isOffline ) {
+          super.log( "error", "client offline", { error: err ? err.message : null });
+        } else {
+          super.log( "error", "request error", { error: err ? err.message : null });
+        }
 
-        this.processError && this.processError();
+        this.processError && this.processError( err );
 
         this._refresh( this.fetchConfig.cooldown );
       }

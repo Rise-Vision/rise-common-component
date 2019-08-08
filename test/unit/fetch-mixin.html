@@ -50,17 +50,18 @@
 
     suite( "_getData", () => {
       test( "should get the result from cache", done => {
-        cacheMixin.getCache = sinon.stub().resolves("text");
+        cacheMixin.getCache = sinon.stub().resolves( new Response("text") );
         sinon.stub(fetchMixin, "_requestData");
 
         fetchMixin._getData().then(() => {
           assert.isTrue( cacheMixin.getCache.called );
           assert.isTrue( handleResponse.called );
-          assert.isTrue( handleResponse.calledWith("text") );          
-
           assert.isFalse( fetchMixin._requestData.called );
 
-          done();
+          handleResponse.getCall(0).args[0].text().then( text => {
+            assert.equal( text, "text" );
+            done();
+          });
         });
       });
 
@@ -162,53 +163,14 @@
         });
       });
 
-      test( "should handle request http response failures and return cached data if offline", done => {
-        fetchMixin.initFetch({
-          useCacheIfOffline: true
-        }, handleResponse, handleError );
-
-        cacheMixin.putCache = sinon.stub().resolves();
-        cacheMixin.getCache = sinon.stub().callsFake(function (url, ignoreExpiration) {
-          if (ignoreExpiration) {
-            return Promise.resolve(response);
-          } else {
-            return Promise.reject();
-          }
-        });
-
+      test( "should handle request http response failures and return cached data indicating if it's offline", done => {
         // Check for widgets.risevision.com will fail since fetch always rejects
         window.fetch.rejects();
 
-        fetchMixin._requestData().then(() => {
+        fetchMixin._requestData( response ).then(() => {
           assert.isTrue( handleResponse.called );
           assert.isTrue( handleResponse.calledWith( response ) );
-
-          done();
-        });
-      });
-
-      test( "should handle request http response failures and fail if online", done => {
-        fetchMixin.initFetch({
-          useCacheIfOffline: true
-        }, handleResponse, handleError );
-
-        cacheMixin.putCache = sinon.stub().resolves();
-        cacheMixin.getCache = sinon.stub().callsFake(function (url, ignoreExpiration) {
-          if (ignoreExpiration) {
-            return Promise.resolve(response);
-          } else {
-            return Promise.reject();
-          }
-        });
-
-        window.fetch.onFirstCall().rejects();
-        // Check for widgets.risevision.com will succeed
-        window.fetch.onSecondCall().resolves(response);
-
-        sinon.stub(fetchMixin, "_handleFetchError");
-
-        fetchMixin._requestData().then(() => {
-          assert.isTrue( fetchMixin._handleFetchError.called );
+          assert.isTrue( handleResponse.getCall(0).args[0].isOffline );
 
           done();
         });
@@ -275,6 +237,18 @@
           fetchMixin._handleFetchError( new Error("error") );
 
           assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "request error", {error: "error"}]);
+
+          assert.isTrue( handleError.called );
+        });
+
+        test( "should call handleError on request failures while offline", done => {
+          sinon.stub(fetchMixin, "_refresh");
+
+          fetchMixin._requestRetryCount = 5;
+
+          fetchMixin._handleFetchError( { message: "error", isOffline: true } );
+
+          assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "client offline", {error: "error"}]);
 
           assert.isTrue( handleError.called );
         });

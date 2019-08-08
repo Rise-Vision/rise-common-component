@@ -92,12 +92,12 @@ For caching arbitrary data responses, the mixin uses browsers Cache API.
 
 Whenever the cached data is retrieved, the mixin checks the date header and delete it from cache in case it is expired. Also, to prevent cache from growing indefinitely, during mixin initialization all expired cache entries are deleted.
 
-To enable the mixin in your component you have to declare the mixin and call the `initCache` function with your desired cache name and optionally duration. Cache duration defaults to 2h. By default the mixin removes expired entries; this behavior can be changed with the `preserveExpired` attribute. Default values are:
+To enable the mixin in your component you have to declare the mixin and call the `initCache` function with your desired cache name and optionally duration. Cache duration defaults to 2h. Cache expiry defaults to 4h. Caches entries are removed using the expiry attribute; if set to -1, entries are not removed. Default values are:
 ```
 {
   name: "cache-mixin",
   duration: 1000 * 60 * 60 * 2,
-  preserveExpired: false
+  expiry: 1000 * 60 * 60 * 2
 }
 ```
 
@@ -163,8 +163,7 @@ To enable the mixin in your component you have to declare the mixin and call the
   retry: 1000 * 60,
   cooldown: 1000 * 60 * 10,
   refresh: 1000 * 60 * 60,
-  count: 5,
-  useCacheIfOffline: false
+  count: 5
 }
 ```
 

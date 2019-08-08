@@ -99,8 +99,8 @@
         }, 10);
       });
 
-      test( "should not clear old cache entries on init if explicitly required", done => {
-        cache.initCache({ preserveExpired: true });
+      test( "should not clear old cache entries on init if expiry === -1", done => {
+        cache.initCache({ expiry: -1 });
 
         setTimeout(() => {
           assert.isFalse( cachesOpen.delete.called );
@@ -150,7 +150,7 @@
           delete: sinon.spy()
         };
         caches.open.resolves(cachesOpen);
-      
+
         cache.getCache("url").then(() => {
           done("error");
         }).catch(() => {
