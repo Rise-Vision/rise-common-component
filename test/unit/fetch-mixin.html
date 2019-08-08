@@ -241,7 +241,7 @@
           assert.isTrue( handleError.called );
         });
 
-        test( "should call handleError on request failures while offline", done => {
+        test( "should call handleError on request failures while offline", () => {
           sinon.stub(fetchMixin, "_refresh");
 
           fetchMixin._requestRetryCount = 5;
