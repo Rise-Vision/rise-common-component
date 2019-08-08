@@ -136,6 +136,8 @@
       });
 
       test( "should only provide data to client on the first try", done => {
+        let testCallCount = 7;
+
         cacheMixin.getCache = sinon.stub().rejects();
         cacheMixin.putCache = sinon.stub().resolves();
         window.fetch.rejects();
@@ -143,14 +145,12 @@
         sinon.stub(fetchMixin, "_processData");
         sinon.stub(fetchMixin, "_refresh");
 
-        fetchMixin._requestData(response);
-        fetchMixin._requestData(response);
-        fetchMixin._requestData(response);
-        fetchMixin._requestData(response);
-        fetchMixin._requestData(response);
+        for (var i = 0; i < testCallCount; i++) {
+          fetchMixin._requestData(response);
+        }
 
         setTimeout(() => {
-          assert.equal( fetchMixin._refresh.callCount, 5 );
+          assert.equal( fetchMixin._refresh.callCount, testCallCount );
           assert.isTrue( fetchMixin._processData.calledOnce );
 
           done();
@@ -167,6 +167,22 @@
         setTimeout(() => {
           assert.isTrue( handleResponse.called );
           assert.isTrue( handleResponse.calledWith( response ) );          
+
+          done();
+        }, 10);
+      });
+
+      test( "should process data on successful requests and reset _requestRetryCount", done => {
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
+        window.fetch.resolves(response);
+        fetchMixin._requestRetryCount = 7;
+
+        fetchMixin._requestData();
+
+        setTimeout(() => {
+          assert.isTrue( handleResponse.called );
+          assert.isTrue( fetchMixin._requestRetryCount === 0 );
 
           done();
         }, 10);
@@ -261,7 +277,7 @@
           fetchMixin._requestRetryCount = 5;
           fetchMixin._handleFetchError();
 
-          assert.isTrue( fetchMixin._requestRetryCount === 0 );
+          assert.equal( fetchMixin._requestRetryCount, 6 );
           assert.isTrue( fetchMixin._refresh.called );
           assert.isTrue( fetchMixin._refresh.calledWith(1000 * 60 * 10) );
 
