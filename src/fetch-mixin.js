@@ -30,10 +30,6 @@ export const FetchMixin = dedupingMixin( base => {
 
       this.processData = processData;
       this.processError = processError;
-
-      super.initCache && super.initCache({
-        refresh: this.fetchConfig.refresh
-      });
     }
 
     fetch( url, headers ) {
