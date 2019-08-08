@@ -24,7 +24,7 @@
     }
   };
 
-  const keys = ['key1','key2'];
+  const keys = ['key1', 'key2', 'key3'];
   var cachesOpen = null;
 
   function createCacheStub() {
@@ -36,7 +36,9 @@
             get: function() {
               if (key === 'key1') {
                 return new Date(); //valid cache
-              } else {
+              } else if (key === 'key2') {
+                return new Date(Date.now() - 1000 * 60 * 60 * 3); //expired duration
+              } else if (key === 'key3') {
                 return new Date('1980-01-01'); //expired cache
               }
             }
@@ -93,7 +95,9 @@
         cache.initCache();
 
         setTimeout(() => {
-          assert.isTrue( cachesOpen.delete.calledWith('key2'));
+          assert.isFalse( cachesOpen.delete.calledWith('key1'));
+          assert.isFalse( cachesOpen.delete.calledWith('key2'));
+          assert.isTrue( cachesOpen.delete.calledWith('key3'));
 
           done();
         }, 10);
@@ -142,6 +146,26 @@
         });
       });
       
+      test( "should not delete expired cached data if expiry is valid", done => {
+        const expiration = new Date(Date.now() - 1000 * 60 * 60 * 3);
+        const validXmlData = "<report><observation temperature=\"12\"/><location/></report>",
+          cachedData = new Response(validXmlData,{headers:{date: expiration}});
+        cachesOpen = {
+          match: sinon.stub().resolves(cachedData),
+          delete: sinon.spy()
+        };
+        caches.open.resolves(cachesOpen);
+
+        cache.getCache("url").then(() => {
+          done("error");
+        }).catch((response) => {
+          assert.isFalse( cachesOpen.delete.called );
+          assert.equal( response, cachedData );
+
+          done();
+        });
+      });
+
       test( "should delete expired cached data", done => {
         const validXmlData = "<report><observation temperature=\"12\"/><location/></report>",
           cachedData = new Response(validXmlData,{headers:{date: new Date('1980-01-01')}});

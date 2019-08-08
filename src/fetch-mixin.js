@@ -73,6 +73,7 @@ export const FetchMixin = dedupingMixin( base => {
     _requestData( cachedResp ) {
       return fetch( this._url, this._headers ).then( resp => {
         if ( resp.ok ) {
+          this._requestRetryCount = 0;
           this._logData( false );
           this._processData( resp.clone());
 
@@ -82,7 +83,9 @@ export const FetchMixin = dedupingMixin( base => {
         }
       }).catch( err => {
         return this._isOffline().then( isOffline => {
-          cachedResp && this._processData( Object.assign( cachedResp, { isOffline }));
+          if ( this._requestRetryCount === 0 ) {
+            cachedResp && this._processData( Object.assign( cachedResp, { isOffline }));
+          }
 
           this._handleFetchError( Object.assign( err, { isOffline }));
         });

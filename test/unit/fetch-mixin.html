@@ -117,6 +117,46 @@
         });
       });
 
+      test( "should use expired cached data if provided by caller", done => {
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
+        window.fetch.rejects();
+
+        sinon.stub(fetchMixin, "_handleFetchError");
+        sinon.stub(fetchMixin, "_processData");
+
+        fetchMixin._requestData(response);
+
+        setTimeout(() => {
+          assert.isTrue( fetchMixin._handleFetchError.called );
+          assert.isTrue( fetchMixin._processData.called );
+
+          done();
+        }, 10);
+      });
+
+      test( "should only provide data to client on the first try", done => {
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
+        window.fetch.rejects();
+
+        sinon.stub(fetchMixin, "_processData");
+        sinon.stub(fetchMixin, "_refresh");
+
+        fetchMixin._requestData(response);
+        fetchMixin._requestData(response);
+        fetchMixin._requestData(response);
+        fetchMixin._requestData(response);
+        fetchMixin._requestData(response);
+
+        setTimeout(() => {
+          assert.equal( fetchMixin._refresh.callCount, 5 );
+          assert.isTrue( fetchMixin._processData.calledOnce );
+
+          done();
+        }, 10);
+      });
+
       test( "should process data on successful requests", done => {
         cacheMixin.getCache = sinon.stub().rejects();
         cacheMixin.putCache = sinon.stub().resolves();
