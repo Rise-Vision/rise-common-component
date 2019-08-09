@@ -24,26 +24,32 @@
     }
   };
 
-  const keys = ['key1','key2'];
-  var cachesOpen = { 
-    keys: sinon.stub().resolves(keys),
-    match: function(key) {
-      let resp = {
-        headers: {
-          get: function() {
-            if (key === 'key1') {
-              return new Date(); //valid cache
-            } else {
-              return new Date('1980-01-01'); //expired cache
+  const keys = ['key1', 'key2', 'key3'];
+  var cachesOpen = null;
+
+  function createCacheStub() {
+    return {
+      keys: sinon.stub().resolves(keys),
+      match: function(key) {
+        let resp = {
+          headers: {
+            get: function() {
+              if (key === 'key1') {
+                return new Date(); //valid cache
+              } else if (key === 'key2') {
+                return new Date(Date.now() - 1000 * 60 * 60 * 3); //expired duration
+              } else if (key === 'key3') {
+                return new Date('1980-01-01'); //expired cache
+              }
             }
           }
-        }
-      };
-      return Promise.resolve(resp);
-    },
-    delete: sinon.spy(),
-    put: sinon.spy()
-  };
+        };
+        return Promise.resolve(resp);
+      },
+      delete: sinon.spy(),
+      put: sinon.spy()
+    };
+  }
 </script>
 
 <script type="module">
@@ -59,6 +65,7 @@
       logger = cache.__proto__.__proto__;
       sinon.stub(logger, "log");
 
+      cachesOpen = createCacheStub();
       sinon.stub(caches, "open").resolves(cachesOpen);
     });
 
@@ -83,12 +90,24 @@
     });
 
     suite("deleteExpiredCache", () => {
-      
+
       test( "should clear old cache entries on init", done => {
         cache.initCache();
 
         setTimeout(() => {
-          assert.isTrue( cachesOpen.delete.calledWith('key2'));
+          assert.isFalse( cachesOpen.delete.calledWith('key1'));
+          assert.isFalse( cachesOpen.delete.calledWith('key2'));
+          assert.isTrue( cachesOpen.delete.calledWith('key3'));
+
+          done();
+        }, 10);
+      });
+
+      test( "should not clear old cache entries on init if expiry === -1", done => {
+        cache.initCache({ expiry: -1 });
+
+        setTimeout(() => {
+          assert.isFalse( cachesOpen.delete.called );
 
           done();
         }, 10);
@@ -127,6 +146,26 @@
         });
       });
       
+      test( "should not delete expired cached data if expiry is valid", done => {
+        const expiration = new Date(Date.now() - 1000 * 60 * 60 * 3);
+        const validXmlData = "<report><observation temperature=\"12\"/><location/></report>",
+          cachedData = new Response(validXmlData,{headers:{date: expiration}});
+        cachesOpen = {
+          match: sinon.stub().resolves(cachedData),
+          delete: sinon.spy()
+        };
+        caches.open.resolves(cachesOpen);
+
+        cache.getCache("url").then(() => {
+          done("error");
+        }).catch((response) => {
+          assert.isFalse( cachesOpen.delete.called );
+          assert.equal( response, cachedData );
+
+          done();
+        });
+      });
+
       test( "should delete expired cached data", done => {
         const validXmlData = "<report><observation temperature=\"12\"/><location/></report>",
           cachedData = new Response(validXmlData,{headers:{date: new Date('1980-01-01')}});
@@ -135,7 +174,7 @@
           delete: sinon.spy()
         };
         caches.open.resolves(cachesOpen);
-      
+
         cache.getCache("url").then(() => {
           done("error");
         }).catch(() => {

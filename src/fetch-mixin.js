@@ -59,18 +59,21 @@ export const FetchMixin = dedupingMixin( base => {
     }
 
     _getData() {
-      return this._tryGetCache( this._url ).then( resp => {
+      return this._tryGetCache().then( resp => {
         this._logData( true );
 
-        this._processData( resp );
-      }).catch(() => {
-        this._requestData();
+        this._processData( Object.assign( resp.clone(), { isCached: true }));
+      }).catch(( cachedResp ) => {
+        cachedResp = cachedResp && cachedResp.clone ? Object.assign( cachedResp.clone(), { isCached: true }) : null;
+
+        this._requestData( cachedResp );
       });
     }
 
-    _requestData() {
+    _requestData( cachedResp ) {
       return fetch( this._url, this._headers ).then( resp => {
         if ( resp.ok ) {
+          this._requestRetryCount = 0;
           this._logData( false );
           this._processData( resp.clone());
 
@@ -78,7 +81,26 @@ export const FetchMixin = dedupingMixin( base => {
         } else {
           throw new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
         }
-      }).catch( this._handleFetchError.bind( this ));
+      }).catch( err => {
+        return this._isOffline().then( isOffline => {
+          if ( this._requestRetryCount === 0 ) {
+            cachedResp && this._processData( Object.assign( cachedResp, { isOffline }));
+          }
+
+          this._handleFetchError( Object.assign( err, { isOffline }));
+        });
+      });
+    }
+
+    _isOffline() {
+      return new Promise(( resolve ) => {
+        fetch( "https://widgets.risevision.com", { method: "HEAD" })
+          .then(() => {
+            resolve( false );
+          }).catch(() => {
+            resolve( true );
+          });
+      });
     }
 
     _processData( resp ) {
@@ -95,22 +117,30 @@ export const FetchMixin = dedupingMixin( base => {
     }
 
     _handleFetchError( err ) {
-      if ( this._requestRetryCount < this.fetchConfig.count ) {
+      if ( !this._isMaxRetryAttempt()) {
         this._requestRetryCount += 1;
 
         this._refresh( this.fetchConfig.retry );
       } else {
         this._requestRetryCount = 0;
 
-        super.log( "error", "request error", { error: err ? err.message : null });
+        if ( err && err.isOffline ) {
+          super.log( "error", "client offline", { error: err ? err.message : null });
+        } else {
+          super.log( "error", "request error", { error: err ? err.message : null });
+        }
 
-        this.processError && this.processError();
+        this.processError && this.processError( err );
 
         this._refresh( this.fetchConfig.cooldown );
       }
     }
 
+    _isMaxRetryAttempt() {
+      return this._requestRetryCount >= this.fetchConfig.count;
+    }
+
   }
 
   return Fetch;
-})
+});

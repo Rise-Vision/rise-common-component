@@ -5,6 +5,7 @@ export const CacheMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
       name: "cache-mixin",
       duration: 1000 * 60 * 60 * 2,
+      expiry: 1000 * 60 * 60 * 4
     },
     cacheBase = LoggerMixin( base );
 
@@ -31,14 +32,22 @@ export const CacheMixin = dedupingMixin( base => {
       }
     }
 
+    _isResponseExpired( response, expiration ) {
+      if ( expiration === -1 ) {
+        return false;
+      } else {
+        const date = response && response.headers && new Date( response.headers.get( "date" ));
+
+        return !date || ( Date.now() > date.getTime() + expiration );
+      }
+    }
+
     _deleteExpiredCache() {
       this._getCache().then( cache => {
         cache.keys().then( keys => {
           keys.forEach( key => {
             cache.match( key ).then( response => {
-              const date = new Date( response.headers.get( "date" ));
-
-              if ( Date.now() > date.getTime() + this.cacheConfig.duration ) {
+              if ( this._isResponseExpired( response, this.cacheConfig.expiry )) {
                 cache.delete( key );
               }
             });
@@ -48,7 +57,7 @@ export const CacheMixin = dedupingMixin( base => {
     }
 
     putCache( res ) {
-      this._getCache().then( cache => {
+      return this._getCache().then( cache => {
         return cache.put( res.url, res );
       }).catch( err => {
         super.log( "warning", "cache put failed", { url: res.url }, err );
@@ -62,18 +71,13 @@ export const CacheMixin = dedupingMixin( base => {
         _cache = cache;
         return cache.match( url );
       }).then( response => {
-        if ( response ) {
-          const date = new Date( response.headers.get( "date" ));
-
-          if ( Date.now() < date.getTime() + this.cacheConfig.duration ) {
-            return Promise.resolve( response );
-
-          } else {
-            _cache.delete( url );
-
-            return Promise.reject();
-          }
+        if ( !this._isResponseExpired( response, this.cacheConfig.duration )) {
+          return Promise.resolve( response );
+        } else if ( !this._isResponseExpired( response, this.cacheConfig.expiry )) {
+          return Promise.reject( response );
         } else {
+          response && _cache.delete( url );
+
           return Promise.reject();
         }
       });
@@ -81,4 +85,4 @@ export const CacheMixin = dedupingMixin( base => {
   }
 
   return Cache;
-})
+});

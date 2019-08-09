@@ -50,17 +50,18 @@
 
     suite( "_getData", () => {
       test( "should get the result from cache", done => {
-        cacheMixin.getCache = sinon.stub().resolves("text");
+        cacheMixin.getCache = sinon.stub().resolves( new Response("text") );
         sinon.stub(fetchMixin, "_requestData");
 
         fetchMixin._getData().then(() => {
           assert.isTrue( cacheMixin.getCache.called );
           assert.isTrue( handleResponse.called );
-          assert.isTrue( handleResponse.calledWith("text") );          
-
           assert.isFalse( fetchMixin._requestData.called );
 
-          done();
+          handleResponse.getCall(0).args[0].text().then( text => {
+            assert.equal( text, "text" );
+            done();
+          });
         });
       });
 
@@ -116,6 +117,46 @@
         });
       });
 
+      test( "should use expired cached data if provided by caller", done => {
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
+        window.fetch.rejects();
+
+        sinon.stub(fetchMixin, "_handleFetchError");
+        sinon.stub(fetchMixin, "_processData");
+
+        fetchMixin._requestData(response);
+
+        setTimeout(() => {
+          assert.isTrue( fetchMixin._handleFetchError.called );
+          assert.isTrue( fetchMixin._processData.called );
+
+          done();
+        }, 10);
+      });
+
+      test( "should only provide data to client on the first try", done => {
+        let testCallCount = 7;
+
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
+        window.fetch.rejects();
+
+        sinon.stub(fetchMixin, "_processData");
+        sinon.stub(fetchMixin, "_refresh");
+
+        for (var i = 0; i < testCallCount; i++) {
+          fetchMixin._requestData(response);
+        }
+
+        setTimeout(() => {
+          assert.equal( fetchMixin._refresh.callCount, testCallCount );
+          assert.isTrue( fetchMixin._processData.calledTwice );
+
+          done();
+        }, 10);
+      });
+
       test( "should process data on successful requests", done => {
         cacheMixin.getCache = sinon.stub().rejects();
         cacheMixin.putCache = sinon.stub().resolves();
@@ -126,6 +167,22 @@
         setTimeout(() => {
           assert.isTrue( handleResponse.called );
           assert.isTrue( handleResponse.calledWith( response ) );          
+
+          done();
+        }, 10);
+      });
+
+      test( "should process data on successful requests and reset _requestRetryCount", done => {
+        cacheMixin.getCache = sinon.stub().rejects();
+        cacheMixin.putCache = sinon.stub().resolves();
+        window.fetch.resolves(response);
+        fetchMixin._requestRetryCount = 7;
+
+        fetchMixin._requestData();
+
+        setTimeout(() => {
+          assert.isTrue( handleResponse.called );
+          assert.isTrue( fetchMixin._requestRetryCount === 0 );
 
           done();
         }, 10);
@@ -157,6 +214,19 @@
 
         fetchMixin._requestData().then(() => {
           assert.isTrue( fetchMixin._handleFetchError.called );
+
+          done();
+        });
+      });
+
+      test( "should handle request http response failures and return cached data indicating if it's offline", done => {
+        // Check for widgets.risevision.com will fail since fetch always rejects
+        window.fetch.rejects();
+
+        fetchMixin._requestData( response ).then(() => {
+          assert.isTrue( handleResponse.called );
+          assert.isTrue( handleResponse.calledWith( response ) );
+          assert.isTrue( handleResponse.getCall(0).args[0].isOffline );
 
           done();
         });
@@ -207,7 +277,7 @@
           fetchMixin._requestRetryCount = 5;
           fetchMixin._handleFetchError();
 
-          assert.isTrue( fetchMixin._requestRetryCount === 0 );
+          assert.equal( fetchMixin._requestRetryCount, 0 );
           assert.isTrue( fetchMixin._refresh.called );
           assert.isTrue( fetchMixin._refresh.calledWith(1000 * 60 * 10) );
 
@@ -223,6 +293,18 @@
           fetchMixin._handleFetchError( new Error("error") );
 
           assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "request error", {error: "error"}]);
+
+          assert.isTrue( handleError.called );
+        });
+
+        test( "should call handleError on request failures while offline", () => {
+          sinon.stub(fetchMixin, "_refresh");
+
+          fetchMixin._requestRetryCount = 5;
+
+          fetchMixin._handleFetchError( { message: "error", isOffline: true } );
+
+          assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "client offline", {error: "error"}]);
 
           assert.isTrue( handleError.called );
         });
