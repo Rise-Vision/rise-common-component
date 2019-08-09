@@ -117,7 +117,7 @@ export const FetchMixin = dedupingMixin( base => {
     }
 
     _handleFetchError( err ) {
-      if ( this._requestRetryCount < this.fetchConfig.count ) {
+      if ( !this._isMaxRetryAttempt()) {
         this._requestRetryCount += 1;
 
         this._refresh( this.fetchConfig.retry );
@@ -134,6 +134,10 @@ export const FetchMixin = dedupingMixin( base => {
 
         this._refresh( this.fetchConfig.cooldown );
       }
+    }
+
+    _isMaxRetryAttempt() {
+      return this._requestRetryCount >= this.fetchConfig.count;
     }
 
   }
