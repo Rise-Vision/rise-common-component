@@ -122,7 +122,8 @@ export const WatchFilesMixin = dedupingMixin( base => {
     _handleSingleFileError( message ) {
       const { filePath, fileUrl } = message,
         details = { filePath, errorMessage: message.errorMessage, errorDetail: message.errorDetail },
-        fileInError = this._getManagedFileInError( filePath );
+        fileInError = this._getManagedFileInError( filePath ),
+        errorName = message.errorMessage === "Insufficient disk space" ? "file-insufficient-disk-space-error" : "file-rls-error";
 
       // prevent repetitive logging when component instance is receiving messages from other potential component instances watching same file
       // Note: to avoid using Lodash or Underscore library for just a .isEqual() function, taking a simple approach to object comparison with JSON.stringify()
@@ -142,7 +143,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
         "Invalid response with status code [CODE]"
        */
 
-      this.log( WatchFiles.LOG_TYPE_ERROR, "file-rls-error", {
+      this.log( WatchFiles.LOG_TYPE_ERROR, errorName, {
         errorMessage: message.errorMessage,
         errorDetail: message.errorDetail
       }, {
