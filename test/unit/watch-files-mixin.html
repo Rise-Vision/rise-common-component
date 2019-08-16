@@ -79,6 +79,8 @@
       } );
 
       test( "should handle file errors", () => {
+        sinon.spy( watchFiles, "log" );
+
         watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
 
         watchFiles._handleSingleFileUpdate( {
@@ -90,8 +92,56 @@
         } );
 
         assert.equal( watchFiles.watchedFileErrorCallback.callCount, 1 );
+        assert.deepEqual( watchFiles.log.lastCall.args, [
+          "error",
+          "file-rls-error",
+          {
+            errorMessage: "Network error",
+            errorDetail: "Detailed network error"
+          },
+          {
+            storage: {
+              configuration: "storage file",
+              file_form: "jpg",
+              file_path: "foo.jpg",
+              local_url: sampleUrl( "foo.jpg" )
+            }
+          }
+        ]);
         assert.equal (watchFiles.managedFiles.length, 1 );
         assert.equal (watchFiles._managedFilesInError.length, 1 );
+
+        watchFiles.log.restore();
+      } );
+
+      test( "should handle insufficient disk space errors", () => {
+        sinon.spy( watchFiles, "log" );
+
+        watchFiles._handleSingleFileError( {
+          filePath: "baz.mp4",
+          fileUrl: sampleUrl( "baz.mp4" ),
+          errorMessage: "Insufficient disk space",
+          errorDetail: ""
+        } );
+
+        assert.deepEqual( watchFiles.log.lastCall.args, [
+          "error",
+          "file-insufficient-disk-space-error",
+          {
+            errorMessage: "Insufficient disk space",
+            errorDetail: ""
+          },
+          {
+            storage: {
+              configuration: "storage file",
+              file_form: "mp4",
+              file_path: "baz.mp4",
+              local_url: sampleUrl( "baz.mp4" )
+            }
+          }
+        ]);
+
+        watchFiles.log.restore();
       } );
 
       test( "should handle deleting files", () => {
