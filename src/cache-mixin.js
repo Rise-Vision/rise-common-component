@@ -60,7 +60,7 @@ export const CacheMixin = dedupingMixin( base => {
       return this._getCache().then( cache => {
         return cache.put( res.url || url, res );
       }).catch( err => {
-        super.log( "warning", "cache put failed", { url: res.url }, err );
+        super.log( "warning", "cache put failed", { url: res.url || url }, err );
       });
     }
 
