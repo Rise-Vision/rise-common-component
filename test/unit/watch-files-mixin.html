@@ -118,6 +118,7 @@
         sinon.spy( watchFiles, "log" );
 
         watchFiles._handleSingleFileError( {
+          status: "FILE-ERROR",
           filePath: "baz.mp4",
           fileUrl: sampleUrl( "baz.mp4" ),
           errorMessage: "Insufficient disk space",
