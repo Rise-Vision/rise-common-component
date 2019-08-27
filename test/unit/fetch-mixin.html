@@ -20,13 +20,14 @@
   import * as fetchModule from '../../src/fetch-mixin.js';
 
   suite("fetch", () => {
-    let fetchMixin, cacheMixin, loggerMixin, handleResponse, handleError;
+    let elementMixin, fetchMixin, cacheMixin, loggerMixin, handleResponse, handleError;
 
     setup(()=>{
       let Fetch = fetchModule.FetchMixin(class {});
       fetchMixin = new Fetch();
 
       // Dummy for CacheMixin as it is not actually present
+      elementMixin = fetchMixin.__proto__.__proto__.__proto__;
       cacheMixin = fetchMixin.__proto__.__proto__;
       loggerMixin = fetchMixin.__proto__.__proto__;
       sinon.stub(loggerMixin, "log");
@@ -109,7 +110,7 @@
         cacheMixin.getCache = sinon.stub().rejects();
         cacheMixin.putCache = sinon.stub().resolves();
         window.fetch.resolves(response);
-      
+
         fetchMixin._requestData().then(() => {
           assert.isTrue( cacheMixin.putCache.called );
 
@@ -120,6 +121,8 @@
       test( "should use expired cached data if provided by caller", done => {
         cacheMixin.getCache = sinon.stub().rejects();
         cacheMixin.putCache = sinon.stub().resolves();
+        elementMixin.isOffline = sinon.stub().resolves(false);
+
         window.fetch.rejects();
 
         sinon.stub(fetchMixin, "_handleFetchError");
@@ -140,6 +143,7 @@
 
         cacheMixin.getCache = sinon.stub().rejects();
         cacheMixin.putCache = sinon.stub().resolves();
+        elementMixin.isOffline = sinon.stub().resolves(false);
         window.fetch.rejects();
 
         sinon.stub(fetchMixin, "_processData");
@@ -161,12 +165,12 @@
         cacheMixin.getCache = sinon.stub().rejects();
         cacheMixin.putCache = sinon.stub().resolves();
         window.fetch.resolves(response);
-      
+
         fetchMixin._requestData();
-        
+
         setTimeout(() => {
           assert.isTrue( handleResponse.called );
-          assert.isTrue( handleResponse.calledWith( response ) );          
+          assert.isTrue( handleResponse.calledWith( response ) );
 
           done();
         }, 10);
@@ -190,9 +194,10 @@
 
       test( "should handle request failures", done => {
         cacheMixin.getCache = sinon.stub().rejects();
+        elementMixin.isOffline = sinon.stub().resolves(false);
 
         window.fetch.rejects("dsa");
-      
+
         sinon.stub(fetchMixin, "_handleFetchError");
 
         fetchMixin._requestData().then(() => {
@@ -205,11 +210,12 @@
       test( "should handle request http response failures", done => {
         cacheMixin.getCache = sinon.stub().rejects();
         cacheMixin.putCache = sinon.stub().resolves();
+        elementMixin.isOffline = sinon.stub().resolves(false);
 
         response = new Response(validXmlData,{status: 500, headers:{date: new Date()}});
 
         window.fetch.resolves(response);
-      
+
         sinon.stub(fetchMixin, "_handleFetchError");
 
         fetchMixin._requestData().then(() => {
@@ -220,7 +226,7 @@
       });
 
       test( "should handle request http response failures and return cached data indicating if it's offline", done => {
-        // Check for widgets.risevision.com will fail since fetch always rejects
+        elementMixin.isOffline = sinon.stub().resolves(true);
         window.fetch.rejects();
 
         fetchMixin._requestData( response ).then(() => {
@@ -234,7 +240,7 @@
 
       suite( "data refresh mechanism", () => {
         let clock;
-        
+
         setup(() => {
           clock = sinon.useFakeTimers();
         });
@@ -289,7 +295,7 @@
           sinon.stub(fetchMixin, "_refresh");
 
           fetchMixin._requestRetryCount = 5;
-        
+
           fetchMixin._handleFetchError( new Error("error") );
 
           assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "request error", {error: "error"}]);

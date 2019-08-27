@@ -82,24 +82,13 @@ export const FetchMixin = dedupingMixin( base => {
           throw new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
         }
       }).catch( err => {
-        return this._isOffline().then( isOffline => {
+        return super.isOffline().then( isOffline => {
           if ( this._requestRetryCount === 0 ) {
             cachedResp && this._processData( Object.assign( cachedResp, { isOffline }));
           }
 
           this._handleFetchError( Object.assign( err, { isOffline }));
         });
-      });
-    }
-
-    _isOffline() {
-      return new Promise(( resolve ) => {
-        fetch( "https://widgets.risevision.com", { method: "HEAD" })
-          .then(() => {
-            resolve( false );
-          }).catch(() => {
-            resolve( true );
-          });
       });
     }
 

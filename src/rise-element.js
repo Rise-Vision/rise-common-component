@@ -67,6 +67,17 @@ export const RiseElementMixin = dedupingMixin( base => {
         }
       }
 
+      isOffline() {
+        return new Promise(( resolve ) => {
+          fetch( "https://widgets.risevision.com", { method: "HEAD" })
+            .then(() => {
+              resolve( false );
+            }).catch(() => {
+              resolve( true );
+            });
+        });
+      }
+
       _init() {
         this.addEventListener( RiseElement.EVENT_START, this._handleStart, { once: true });
 
