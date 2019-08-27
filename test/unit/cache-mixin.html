@@ -116,7 +116,7 @@
 
     suite("get", () => {
       test( "should reject promise if key is not found", done => {
-        cachesOpen = { 
+        cachesOpen = {
           match: sinon.stub().resolves(null)
         };
         caches.open.resolves(cachesOpen);
@@ -125,27 +125,27 @@
           done("error");
         }).catch(() => {
           assert.isTrue(true);
-          done();          
+          done();
         });
       });
 
       test( "should send cached data if cache is valid", done => {
         const validXmlData = "<report><observation temperature=\"12\"/><location/></report>",
           cachedData = new Response(validXmlData,{headers:{date: new Date()}});
-        cachesOpen = { 
+        cachesOpen = {
           match: sinon.stub().resolves(cachedData)
         };
         caches.open.resolves(cachesOpen);
-      
+
         cache.getCache().then( data => {
           assert.equal( data, cachedData );
 
           done();
         }).catch( error => {
-          done(error);          
+          done(error);
         });
       });
-      
+
       test( "should not delete expired cached data if expiry is valid", done => {
         const expiration = new Date(Date.now() - 1000 * 60 * 60 * 3);
         const validXmlData = "<report><observation temperature=\"12\"/><location/></report>",
@@ -169,7 +169,7 @@
       test( "should delete expired cached data", done => {
         const validXmlData = "<report><observation temperature=\"12\"/><location/></report>",
           cachedData = new Response(validXmlData,{headers:{date: new Date('1980-01-01')}});
-        cachesOpen = { 
+        cachesOpen = {
           match: sinon.stub().resolves(cachedData),
           delete: sinon.spy()
         };
@@ -199,6 +199,19 @@
           data: {}
         }
         cache.putCache( res );
+
+        setTimeout(() => {
+          assert.isTrue( cachesOpen.put.calledWith( 'key3', res ));
+
+          done();
+        }, 10);
+      });
+
+      test("should store url as key and the object when url provided as function parameter", done => {
+        var res = {
+          data: {}
+        }
+        cache.putCache( res, "key3" );
 
         setTimeout(() => {
           assert.isTrue( cachesOpen.put.calledWith( 'key3', res ));
