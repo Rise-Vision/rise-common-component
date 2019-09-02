@@ -74,6 +74,13 @@ export const ValidFilesMixin = dedupingMixin( base => {
         });
       });
 
+      if ( files.length && !validFiles.length ) {
+        this.log( ValidFiles.LOG_TYPE_ERROR, "all-formats-invalid", null, {
+          files,
+          errorMessage: "All file formats are invalid"
+        });
+      }
+
       return { validFiles, invalidFiles };
     }
 
