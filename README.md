@@ -235,7 +235,7 @@ In case you need to specify an error state, you can set `RiseElement._setUptimeE
 
 ### Valid Files Mixin
 
-Used to validate that a list of files has the expected extensions and to log related errors to GBQ.
+Used to validate that a list of files has the expected extensions and to log related errors to BQ.
 
 Provides a `validateFiles( files, extensions )` function, which accepts:
 
@@ -251,7 +251,7 @@ Returns an object containing arrays of all valid / invalid files, ie:
 }
 `
 
-Logs the following errors to GBQ:
+Logs the following errors to BQ:
 
 - `format-invalid` - A file with an invalid extension is encountered
 - `all-formats-invalid` - All files have invalid formats
@@ -298,7 +298,7 @@ class RiseExample extends ValidFilesMixin( RiseElement ) {
 
   - `managedFiles` - A list of watched files which are currently available
 
-  Logs the following errors to GBQ:
+  Logs the following errors to BQ:
 
   - `file-not-found` - Logged when a watched file is not found
   - `file-insufficient-disk-space-error` - Logged when a watched file can not be downloaded due to a lack of disk space
