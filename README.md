@@ -21,7 +21,7 @@ class RiseDataWeather extends RiseElement {}
 `super._setVersion( version )` should always be called as part of the constructor. This will pass your component version to `RiseElement` for logging purposes.
 
 `RiseElement` provides a few utility functions:
-- `ready()` is called by the Component once initialized. 
+- `ready()` is called by the Component once initialized.
 - `_init()` is called once RisePlayerConfiguration has been initialized.
 - `_handleStart()` is called once the Component is required to start playing.
 
@@ -88,7 +88,7 @@ super.log( "error", "data error", { error: e.message });
 
 ### Caching Mechanism
 
-For caching arbitrary data responses, the mixin uses browsers Cache API. 
+For caching arbitrary data responses, the mixin uses browsers Cache API.
 
 Whenever the cached data is retrieved, the mixin checks the date header and delete it from cache in case it is expired. Also, to prevent cache from growing indefinitely, during mixin initialization all expired cache entries are deleted.
 
@@ -162,7 +162,7 @@ _getData() {
 
 ### Fetch Mechanism
 
-Used to fetch data from an API, the mixin uses browsers Fetch API. 
+Used to fetch data from an API, the mixin uses browsers Fetch API.
 
 The mixin can optionally use the cacheMixin for Caching purposes.
 
@@ -232,6 +232,58 @@ In case you need to specify an error state, you can set `RiseElement._setUptimeE
 
 ### Play Until Done
 `RiseElement` provides the `_sendDoneEvent(done)` method for components to report when it is done.
+
+### Valid Files Mixin
+
+Used to validate that a list of files has the expected extensions and to log related errors to GBQ.
+
+Provides a `validateFiles( files, extensions )` function, which accepts:
+
+- an array of filenames, ie: `["video1.mp4", "video2.webm"]`
+- an array of allowed extensions, ie: `["mp4", "webm"]`
+
+Returns an object containing arrays of all valid / invalid files, ie:
+
+`
+{
+  validFiles: ["video1.mp4", "video2.webm"],
+  invalidFiles: []
+}
+`
+
+If a file with an invalid extension is encountered, a `format-invalid` error is logged to GBQ.
+
+If all provided files have invalid extensions, an `all-formats-invalid` error is logged to GBQ.
+
+### Valid Files Mixin Example
+
+```
+import { RiseElement } from "rise-common-component/src/rise-element.js";
+import { ValidFilesMixin } from "rise-common-component/src/valid-files-mixin.js";
+
+const VALID_FILE_TYPES = ["mp4", "webm"];
+
+class RiseExample extends ValidFilesMixin( RiseElement ) {
+  static get properties() {
+    return {
+      files: {
+        type: Array,
+        value: []
+      }
+    }
+  }
+
+  ready() {
+    super.ready();
+  }
+
+  _handleStart() {
+    const validFiles = this.validateFiles( this.files, VALID_FILE_TYPES );
+  }
+
+  ...
+}
+```
 
 ## Built With
 - [Polymer 3](https://www.polymer-project.org/)
