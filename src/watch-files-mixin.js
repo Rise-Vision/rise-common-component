@@ -115,7 +115,6 @@ export const WatchFilesMixin = dedupingMixin( base => {
       this._watchInitiated = false;
       this.managedFiles = [];
       this._managedFilesInError = [];
-      this._filesToRenderList = [];
       this._filesList = [];
     }
 

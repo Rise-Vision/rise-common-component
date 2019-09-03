@@ -121,6 +121,16 @@
           }
         });
       } )
+
+      test( "should log a 'all-formats-invalid' error if all files are invalid", () => {
+        validFiles._filterInvalidFileTypes( [ "test1.txt", "test2.zip", "test3.pdf"], [ "jpg,", "png"] );
+
+        assert.equal( RisePlayerConfiguration.Logger.error.lastCall.args[1], "all-formats-invalid" );
+        assert.deepEqual( RisePlayerConfiguration.Logger.error.lastCall.args[2], {
+          files: [ "test1.txt", "test2.zip", "test3.pdf" ],
+          errorMessage: "All file formats are invalid"
+        });
+      })
     } );
   });
 </script>
