@@ -251,9 +251,10 @@ Returns an object containing arrays of all valid / invalid files, ie:
 }
 `
 
-If a file with an invalid extension is encountered, a `format-invalid` error is logged to GBQ.
+Logs the following errors to GBQ:
 
-If all provided files have invalid extensions, an `all-formats-invalid` error is logged to GBQ.
+- `format-invalid` - A file with an invalid extension is encountered
+- `all-formats-invalid` - All files have invalid formats
 
 ### Valid Files Mixin Example
 
@@ -273,12 +274,83 @@ class RiseExample extends ValidFilesMixin( RiseElement ) {
     }
   }
 
-  ready() {
-    super.ready();
-  }
-
   _handleStart() {
     const validFiles = this.validateFiles( this.files, VALID_FILE_TYPES );
+  }
+
+  ...
+}
+```
+
+### Watch Files Mixin
+
+  Used to facilitate watching and responding to changes to files using RLS.
+
+  Provides the following methods:
+
+  - `watchedFileAddedCallback( details )` - Override in child class to be notified when a watched file is added
+  - `watchedFileErrorCallback( details )` - Override in child class to be notified when there is an error with a watched file
+  - `watchedFileDeletedCallback( details )` - Override in child class to be notified when a watched file is deleted
+  - `startWatch( filesList )` - Start watching a list of files, accepts a list of files, ie: `["path/to/video1.mp4", "path/to/video2.webm"]`
+  - `stopWatch()` - Stop watching all files
+
+  Provides the following properties:
+
+  - `managedFiles` - A list of watched files which are currently available
+
+  Logs the following errors to GBQ:
+
+  - `file-not-found` - Logged when a watched file is not found
+  - `file-insufficient-disk-space-error` - Logged when a watched file can not be downloaded due to a lack of disk space
+  - `file-rls-error` - Logged when a general RLS error is encountered for a watched file
+
+### Watch Files Mixin Example
+
+```
+import { RiseElement } from "rise-common-component/src/rise-element.js";
+import { WatchFilesMixin } from "rise-common-component/src/watch-files-mixin.js";
+
+class RiseExample extends WatchFilesMixin( RiseElement ) {
+  static get properties() {
+    return {
+      files: {
+        type: Array,
+        value: []
+      }
+    }
+  }
+
+  constructor() {
+    super();
+
+    this._renderedFiles = [];
+  }
+
+  static get observers() {
+    return [
+      "_filesChanged(files)"
+    ]
+  }
+
+  _filesChanged() {
+    super.stopWatch();
+    super.startWatch(files);
+  }
+
+  _removeRenderedFile( filePath ) {
+    this._renderedFiles = this._renderedFiles.filter( f => f !== filePath );
+  }
+
+  watchedFileAddedCallback(  details ) {
+    this._renderedFiles.push( details.filePath );
+  }
+
+  watchedFileErrorCallback( details ) {
+    this._removeRenderedFile( details.filePath );
+  }
+
+  watchedFileDeletedCallback( details ) {
+    this._removeRenderedFile( details.filePath );
   }
 
   ...
