@@ -37,7 +37,7 @@
               if (key === 'key1') {
                 return new Date(); //valid cache
               } else if (key === 'key2') {
-                return new Date(Date.now() - 1000 * 60 * 60 * 3); //expired duration
+                return new Date(Date.now() - 1000 * 60 * 60 * 3); //expired "refresh" duration
               } else if (key === 'key3') {
                 return new Date('1980-01-01'); //expired cache
               }

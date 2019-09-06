@@ -4,7 +4,7 @@ import { LoggerMixin } from "./logger-mixin.js";
 export const CacheMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
       name: "cache-mixin",
-      duration: 1000 * 60 * 60 * 2,
+      refresh: 1000 * 60 * 60 * 2,
       expiry: 1000 * 60 * 60 * 4
     },
     cacheBase = LoggerMixin( base );
@@ -71,7 +71,7 @@ export const CacheMixin = dedupingMixin( base => {
         _cache = cache;
         return cache.match( url );
       }).then( response => {
-        if ( !this._isResponseExpired( response, this.cacheConfig.duration )) {
+        if ( !this._isResponseExpired( response, this.cacheConfig.refresh )) {
           return Promise.resolve( response );
         } else if ( !this._isResponseExpired( response, this.cacheConfig.expiry )) {
           return Promise.reject( response );

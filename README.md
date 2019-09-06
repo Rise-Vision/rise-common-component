@@ -92,10 +92,17 @@ For caching arbitrary data responses, the mixin uses browsers Cache API.
 
 Whenever the cached data is retrieved, the mixin checks the date header and delete it from cache in case it is expired. Also, to prevent cache from growing indefinitely, during mixin initialization all expired cache entries are deleted.
 
-To enable the mixin in your component you have to declare the mixin and call the `initCache` function with your desired cache name and optionally duration. Cache duration defaults to 2h. Cache expiry defaults to 4h. For greater certainty:
+To enable the mixin in your component you have to declare the mixin and call the `initCache` function with your desired cache name and optionally refresh. Cache refresh defaults to 2h. Cache expiry defaults to 4h. For greater certainty:
 
-- `duration` is how long a cache entry is valid, after which data will be requested again
-- `expiration` is how long a cache entry is kept for offline, before it gets removed from the cache
+- `refresh` is how long a cache entry is valid, after which data will be requested again
+- `expiry` is how long a cache entry is kept for offline, before it gets removed from the cache
+
+Note: if using `fetchMixin`, it will automatically call, however can overwrite that by calling `initCache` after `initFetch`:
+```
+initCache({
+  refresh: this.fetchConfig.refresh - 5 * 1000
+});
+```
 
 Setting any of the timers to -1 ignores that functionality and either hits the API every time (except for offline) or uses the offline version all the time (until it expires).
 
@@ -104,8 +111,8 @@ Default values are:
 ```
 {
   name: "cache-mixin",
-  duration: 1000 * 60 * 60 * 2,
-  expiry: 1000 * 60 * 60 * 2
+  refresh: 1000 * 60 * 60 * 2,
+  expiry: 1000 * 60 * 60 * 4
 }
 ```
 
@@ -114,7 +121,7 @@ To use the `cacheMixin`, there are two functions:
 
 `super.putCache( response )` adds your response to the cache.
 
-`super.getCache( url )` retrieves your response by resource `url` via a `Promise`. If the resource is not available or it has expired from Cache (see the `duration` variable), the promise will reject.
+`super.getCache( url )` retrieves your response by resource `url` via a `Promise`. If the resource is not available or it has expired from Cache (see the `refresh` variable), the promise will reject.
 
 
 #### Caching Example
@@ -133,7 +140,7 @@ ready() {
 
   super.initCache({
     name: this.tagName.toLowerCase(),
-    duration: 1000 * 60 * 60
+    refresh: 1000 * 60 * 60
   });
 }
 
