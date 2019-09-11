@@ -28,9 +28,9 @@ export const CacheMixin = dedupingMixin( base => {
             statusText: response.statusText
           };
 
-          for ( let p of response.headers.entries()) {
-            cacheObject.headers.push( p );
-          }
+          response.headers.forEach(( val, key ) => {
+            cacheObject.headers.push([ key, val ]);
+          })
 
           return response.clone().text().then( text => {
             cacheObject.text = text;
