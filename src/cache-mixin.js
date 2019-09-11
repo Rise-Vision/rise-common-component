@@ -21,7 +21,7 @@ export const CacheMixin = dedupingMixin( base => {
             return {};
           }
         },
-        cacheToResponse = response => {
+        responseToCache = response => {
           const cacheObject = {
             headers: [],
             status: response.status,
@@ -38,7 +38,7 @@ export const CacheMixin = dedupingMixin( base => {
             return JSON.stringify( cacheObject );
           });
         },
-        responseToCache = text => {
+        cacheToResponse = text => {
           const cacheObject = tryParse( text ),
             init = {
               status: cacheObject.status,
@@ -67,7 +67,7 @@ export const CacheMixin = dedupingMixin( base => {
             const item = localStorage.getItem( getFullKey( key ));
 
             if ( item ) {
-              let response = responseToCache( item );
+              let response = cacheToResponse( item );
 
               return Promise.resolve( response );
             } else {
@@ -78,7 +78,7 @@ export const CacheMixin = dedupingMixin( base => {
             localStorage.removeItem( getFullKey( key ));
           },
           put: ( key, value ) => {
-            cacheToResponse( value ).then( text => {
+            responseToCache( value ).then( text => {
               localStorage.setItem( getFullKey( key ), text );
             });
           }
@@ -94,8 +94,10 @@ export const CacheMixin = dedupingMixin( base => {
 
       this.cacheConfig = Object.assign({}, CACHE_CONFIG );
 
-      if ( !( window.caches && window.caches.open )) {
-        window.caches = new LocalStorageFallback();
+      if ( window.caches && window.caches.open ) {
+        this._caches = window.caches;
+      } else if ( window.localStorage ) {
+        this._caches = new LocalStorageFallback();
       }
     }
 
@@ -106,10 +108,14 @@ export const CacheMixin = dedupingMixin( base => {
     }
 
     _getCache() {
-      if ( window.caches && window.caches.open ) {
-        return caches.open( this.cacheConfig.name );
+      if ( this._caches ) {
+        if ( !( window.caches && window.caches.open )) {
+          super.log( "warning", "cache API not available", true );
+        }
+
+        return this._caches.open( this.cacheConfig.name );
       } else {
-        super.log( "warning", "cache API not available", true );
+        super.log( "warning", "localStorage fallback API not available", true );
 
         return Promise.reject();
       }
