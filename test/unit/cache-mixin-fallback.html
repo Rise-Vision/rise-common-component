@@ -164,14 +164,14 @@
 
         setTimeout(() => {
           // Note: Can't actually set the URL when constructing a Response object
-          assert.isTrue( localStorage.setItem.calledWith( 'cache-mixinundefined', JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date","315532800000"]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"}) ));
+          assert.isTrue( localStorage.setItem.calledWith( 'cache-mixinundefined', JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date","315532800000"]],"status":200,"statusText":"","url":"","text":"<report><observation temperature=\"12\"/><location/></report>"}) ));
 
           done();
         }, 10);
       });
 
       test("should store url as key and the object when url provided as function parameter", done => {
-        var response = new Response("<report><observation temperature=\"12\"/><location/></report>",{headers:{date: new Date('1980-01-01')}})
+        var response = new Response("<report><observation temperature=\"12\"/><location/></report>",{headers:{date: (new Date('1980-01-01')).getTime()}})
         cache.putCache( response , "key3" );
 
         setTimeout(() => {

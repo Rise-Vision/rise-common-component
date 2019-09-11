@@ -25,7 +25,8 @@ export const CacheMixin = dedupingMixin( base => {
           const cacheObject = {
             headers: [],
             status: response.status,
-            statusText: response.statusText
+            statusText: response.statusText,
+            url: response.url
           };
 
           response.headers.forEach(( val, key ) => {
@@ -46,6 +47,10 @@ export const CacheMixin = dedupingMixin( base => {
               headers: cacheObject.headers
             },
             response = new Response( new Blob([ cacheObject.text ]), init );
+
+          if ( cacheObject.url ) {
+            Object.defineProperty( response, "url", { value: cacheObject.url });
+          }
 
           return response;
         },
@@ -147,12 +152,12 @@ export const CacheMixin = dedupingMixin( base => {
       }
     }
 
-    putCache( res, url ) {
+    putCache( response, url ) {
       if ( this._caches ) {
         return this._getCache().then( cache => {
-          return cache.put( res.url || url, res );
+          return cache.put( response.url || url, response );
         }).catch( err => {
-          super.log( "warning", "cache put failed", { url: res.url || url }, err );
+          super.log( "warning", "cache put failed", { url: response.url || url }, err );
         });
       } else {
         return Promise.resolve();
