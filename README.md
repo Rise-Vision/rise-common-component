@@ -307,9 +307,12 @@ class RiseExample extends ValidFilesMixin( RiseElement ) {
 
   Logs the following errors to BQ:
 
-  - `file-not-found` - Logged when a watched file is not found
   - `file-insufficient-disk-space-error` - Logged when a watched file can not be downloaded due to a lack of disk space
   - `file-rls-error` - Logged when a general RLS error is encountered for a watched file
+
+  Logs the following warnings to BQ:
+
+  - `file-not-found` - Logged when a watched file is referenced by the attribute data, but does not exist anymore on storage.
 
 ### Watch Files Mixin Example
 
