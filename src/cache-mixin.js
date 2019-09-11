@@ -146,11 +146,15 @@ export const CacheMixin = dedupingMixin( base => {
     }
 
     putCache( res, url ) {
-      return this._getCache().then( cache => {
-        return cache.put( res.url || url, res );
-      }).catch( err => {
-        super.log( "warning", "cache put failed", { url: res.url || url }, err );
-      });
+      if ( this._caches ) {
+        return this._getCache().then( cache => {
+          return cache.put( res.url || url, res );
+        }).catch( err => {
+          super.log( "warning", "cache put failed", { url: res.url || url }, err );
+        });        
+      } else {
+        return Promise.resolve();
+      }
     }
 
     getCache( url ) {
