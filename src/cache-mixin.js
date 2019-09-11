@@ -153,7 +153,7 @@ export const CacheMixin = dedupingMixin( base => {
           return cache.put( res.url || url, res );
         }).catch( err => {
           super.log( "warning", "cache put failed", { url: res.url || url }, err );
-        });        
+        });
       } else {
         return Promise.resolve();
       }
