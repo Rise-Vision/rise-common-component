@@ -1,0 +1,189 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+  <script src="../../node_modules/mocha/mocha.js"></script>
+  <script src="../../node_modules/chai/chai.js"></script>
+  <script src="../../node_modules/wct-mocha/wct-mocha.js"></script>
+  <script src="../../node_modules/sinon/pkg/sinon.js"></script>
+
+</head>
+<body>
+
+<script type="text/javascript">
+  RisePlayerConfiguration = {
+    Logger: {
+      info: () => {},
+      warning: () => {},
+      error: () => {}
+    }
+  };
+
+  function createLocalStorageStub() {
+    localStorage.setItem("rise-common-componentkey1", "{\"text\":\"123\", \"headers\":[[\"date\", \"" + new Date() + "\"]]}");
+    localStorage.setItem("rise-common-componentkey2", "{\"text\":\"123\",\"headers\":[[\"date\", \"" + new Date(Date.now() - 1000 * 60 * 60 * 3) + "\"]]}");
+    localStorage.setItem("rise-common-componentkey3", "{\"text\":\"123\",\"headers\":[[\"date\", \"" + new Date('1980-01-01') + "\"]]}");
+
+    sinon.spy(localStorage, "getItem");
+    sinon.spy(localStorage, "removeItem");
+    sinon.spy(localStorage, "setItem");
+  }
+</script>
+
+<script type="module">
+  import * as cacheModule from '../../src/cache-mixin.js';
+
+  suite("cache", () => {
+    let cache, logger;
+    let windowCachesOpen;
+
+    setup(()=>{
+      let Cache = cacheModule.CacheMixin(class {});
+
+      createLocalStorageStub();
+      windowCachesOpen = caches.open;
+      caches.open = undefined;
+
+      cache = new Cache();
+
+      sinon.spy(cache._caches, "open");
+
+      logger = cache.__proto__.__proto__;
+      sinon.stub(logger, "log");
+    });
+
+    teardown(()=>{
+      sinon.restore();
+      caches.open = windowCachesOpen;
+    });
+
+    suite( "init", () => {
+      test( "should cache with defaults", () => {
+        cache.initCache();
+    
+        assert.isTrue( cache._caches.open.calledWith( "cache-mixin" ) );
+      });
+    
+      test( "should init cache", () => {
+        cache.initCache({
+          name: "rise-common-component",
+        });
+      
+        assert.isTrue( cache._caches.open.calledWith( "rise-common-component" ) );
+      });
+    });
+
+    suite("deleteExpiredCache", () => {
+    
+      test( "should clear old cache entries on init", done => {
+        cache.initCache();
+    
+        setTimeout(() => {
+          assert.isFalse( localStorage.removeItem.calledWith('rise-common-componentkey1'));
+          assert.isFalse( localStorage.removeItem.calledWith('rise-common-componentkey2'));
+          assert.isTrue( localStorage.removeItem.calledWith('rise-common-componentkey3'));
+    
+          done();
+        }, 10);
+      });
+    
+      test( "should not clear old cache entries on init if expiry === -1", done => {
+        cache.initCache({ expiry: -1 });
+    
+        setTimeout(() => {
+          assert.isFalse( localStorage.removeItem.called );
+    
+          done();
+        }, 10);
+      });
+    });
+
+    suite("get", () => {
+      test( "should reject promise if key is not found", done => {
+        cache.getCache().then(() => {
+          done("error");
+        }).catch(() => {
+          assert.isTrue(true);
+          done();
+        });
+      });
+
+      test( "should send cached data if cache is valid", done => {
+        const expiration = new Date();
+        const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
+        localStorage.setItem("cache-mixinkey3", cacheString);
+
+        cache.getCache("key3").then( data => {
+          assert.isTrue( data instanceof Response );
+
+          done();
+        }).catch( error => {
+          done(error);
+        });
+      });
+
+      test( "should not delete expired cached data if expiry is valid", done => {
+        const expiration = new Date(Date.now() - 1000 * 60 * 60 * 3);
+        const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
+        localStorage.setItem("cache-mixinkey3", cacheString);
+
+        cache.getCache("key3").then(() => {
+          done("error");
+        }).catch((data) => {
+          assert.isFalse( localStorage.removeItem.called );
+          assert.isTrue( data instanceof Response );
+
+          done();
+        });
+      });
+
+      test( "should delete expired cached data", done => {
+        const expiration = new Date('1980-01-01');
+        const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
+        localStorage.setItem("cache-mixinkey3", cacheString);
+
+        cache.getCache("key3").then(() => {
+          done("error");
+        }).catch(() => {
+          assert.isTrue( localStorage.removeItem.called );
+
+          done();
+        });
+      });
+    });
+
+    suite("put", () => {
+      test("should store url as key and the object", done => {
+        var response = new Response("<report><observation temperature=\"12\"/><location/></report>",{headers:{date: new Date('1980-01-01')}})
+        cache.putCache( response );
+
+        setTimeout(() => {
+          // Note: Can't actually set the URL when constructing a Response object
+          assert.isTrue( localStorage.setItem.calledWith( 'cache-mixinundefined', JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date","Mon Dec 31 1979 19:00:00 GMT-0500 (Eastern Standard Time)"]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"}) ));
+
+          done();
+        }, 10);
+      });
+
+      test("should store url as key and the object when url provided as function parameter", done => {
+        var response = new Response("<report><observation temperature=\"12\"/><location/></report>",{headers:{date: new Date('1980-01-01')}})
+        cache.putCache( response , "key3" );
+
+        setTimeout(() => {
+          assert.isTrue( localStorage.setItem.calledWith( 'cache-mixinkey3', sinon.match.string ));
+
+          done();
+        }, 10);
+      });
+    });
+
+  });
+</script>
+
+</body>
+</html>

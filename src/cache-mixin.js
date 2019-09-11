@@ -71,7 +71,7 @@ export const CacheMixin = dedupingMixin( base => {
 
               return Promise.resolve( response );
             } else {
-              return Promise.reject();
+              return Promise.resolve();
             }
           },
           delete: ( key ) => {
@@ -132,17 +132,19 @@ export const CacheMixin = dedupingMixin( base => {
     }
 
     _deleteExpiredCache() {
-      this._getCache().then( cache => {
-        cache.keys().then( keys => {
-          keys.forEach( key => {
-            cache.match( key ).then( response => {
-              if ( this._isResponseExpired( response, this.cacheConfig.expiry )) {
-                cache.delete( key );
-              }
+      if ( this._caches ) {
+        this._getCache().then( cache => {
+          return cache.keys().then( keys => {
+            keys.forEach( key => {
+              cache.match( key ).then( response => {
+                if ( response && this._isResponseExpired( response, this.cacheConfig.expiry )) {
+                  cache.delete( key );
+                }
+              });
             });
           });
         });
-      }).catch(() => {});
+      }
     }
 
     putCache( res, url ) {
@@ -158,24 +160,27 @@ export const CacheMixin = dedupingMixin( base => {
     }
 
     getCache( url ) {
-      let _cache;
+      if ( this._caches ) {
+        let _cache;
 
-      return this._getCache().then( cache => {
-        _cache = cache;
-        return cache.match( url );
-      }).then( response => {
-        if ( !this._isResponseExpired( response, this.cacheConfig.refresh )) {
-          return Promise.resolve( response );
-        } else if ( !this._isResponseExpired( response, this.cacheConfig.expiry )) {
-          return Promise.reject( response );
-        } else if ( _cache ) {
-          response && _cache.delete( url );
-
-          return Promise.reject();
-        } else {
-          return Promise.reject();
-        }
-      });
+        return this._getCache().then( cache => {
+          _cache = cache;
+          return cache.match( url );
+        }).then( response => {
+          if ( !this._isResponseExpired( response, this.cacheConfig.refresh )) {
+            return Promise.resolve( response );
+          } else if ( !this._isResponseExpired( response, this.cacheConfig.expiry )) {
+            return Promise.reject( response );
+          } else if ( _cache ) {
+            response && _cache.delete( url );
+            return Promise.reject();
+          } else {
+            return Promise.reject();
+          }
+        });
+      } else {
+        return Promise.reject();
+      }
     }
   }
 
