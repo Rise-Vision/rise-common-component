@@ -105,7 +105,7 @@
 
     suite("get", () => {
       test( "should reject promise if key is not found", done => {
-        cache.getCache().then(() => {
+        cache.getCache("missingKey").then(() => {
           done("error");
         }).catch(() => {
           assert.isTrue(true);
@@ -116,9 +116,9 @@
       test( "should send cached data if cache is valid", done => {
         const expiration = new Date();
         const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
-        localStorage.setItem("cache-mixinkey3", cacheString);
+        localStorage.setItem("cache-mixinkey4", cacheString);
 
-        cache.getCache("key3").then( data => {
+        cache.getCache("key4").then( data => {
           assert.isTrue( data instanceof Response );
 
           done();
@@ -130,9 +130,9 @@
       test( "should not delete expired cached data if expiry is valid", done => {
         const expiration = new Date(Date.now() - 1000 * 60 * 60 * 3);
         const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
-        localStorage.setItem("cache-mixinkey3", cacheString);
+        localStorage.setItem("cache-mixinkey4", cacheString);
 
-        cache.getCache("key3").then(() => {
+        cache.getCache("key4").then(() => {
           done("error");
         }).catch((data) => {
           assert.isFalse( localStorage.removeItem.called );
@@ -145,9 +145,9 @@
       test( "should delete expired cached data", done => {
         const expiration = new Date('1980-01-01');
         const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
-        localStorage.setItem("cache-mixinkey3", cacheString);
+        localStorage.setItem("cache-mixinkey4", cacheString);
 
-        cache.getCache("key3").then(() => {
+        cache.getCache("key4").then(() => {
           done("error");
         }).catch(() => {
           assert.isTrue( localStorage.removeItem.called );
