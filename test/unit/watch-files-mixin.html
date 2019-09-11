@@ -78,86 +78,115 @@
         assert.equal ( watchFiles.managedFiles.length, 2);
       } );
 
-      test( "should handle file errors", () => {
-        sinon.spy( watchFiles, "log" );
-
-        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
-
-        watchFiles._handleSingleFileUpdate( {
-          filePath: "foo.jpg",
-          fileUrl: sampleUrl( "foo.jpg" ),
-          status: "file-error",
-          errorMessage: "Network error",
-          errorDetail: "Detailed network error"
+      suite( "handle errors", () => {
+        setup( () => {
+          sinon.spy( watchFiles, "log" );
         } );
 
-        assert.equal( watchFiles.watchedFileErrorCallback.callCount, 1 );
-        assert.deepEqual( watchFiles.log.lastCall.args, [
-          "error",
-          "file-rls-error",
-          {
+        teardown( () => {
+          watchFiles.log.restore();
+        } );
+
+        test( "should handle file errors", () => {
+          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+
+          watchFiles._handleSingleFileUpdate( {
+            filePath: "foo.jpg",
+            fileUrl: sampleUrl( "foo.jpg" ),
+            status: "file-error",
             errorMessage: "Network error",
             errorDetail: "Detailed network error"
-          },
-          {
-            storage: {
-              configuration: "storage file",
-              file_form: "jpg",
-              file_path: "foo.jpg",
-              local_url: sampleUrl( "foo.jpg" )
+          } );
+
+          assert.equal( watchFiles.watchedFileErrorCallback.callCount, 1 );
+          assert.deepEqual( watchFiles.log.lastCall.args, [
+            "error",
+            "file-rls-error",
+            {
+              errorMessage: "Network error",
+              errorDetail: "Detailed network error"
+            },
+            {
+              storage: {
+                configuration: "storage file",
+                file_form: "jpg",
+                file_path: "foo.jpg",
+                local_url: sampleUrl( "foo.jpg" )
+              }
             }
-          }
-        ]);
-        assert.equal (watchFiles.managedFiles.length, 1 );
-        assert.equal (watchFiles._managedFilesInError.length, 1 );
-
-        watchFiles.log.restore();
-      } );
-
-      test( "should handle insufficient disk space errors", () => {
-        sinon.spy( watchFiles, "log" );
-
-        watchFiles._handleSingleFileError( {
-          status: "FILE-ERROR",
-          filePath: "baz.mp4",
-          fileUrl: sampleUrl( "baz.mp4" ),
-          errorMessage: "Insufficient disk space",
-          errorDetail: ""
+          ]);
+          assert.equal (watchFiles.managedFiles.length, 1 );
+          assert.equal (watchFiles._managedFilesInError.length, 1 );
         } );
 
-        assert.deepEqual( watchFiles.log.lastCall.args, [
-          "error",
-          "file-insufficient-disk-space-error",
-          {
+        test( "should handle insufficient disk space errors", () => {
+          watchFiles._handleSingleFileError( {
+            status: "FILE-ERROR",
+            filePath: "baz.mp4",
+            fileUrl: sampleUrl( "baz.mp4" ),
             errorMessage: "Insufficient disk space",
             errorDetail: ""
-          },
-          {
-            storage: {
-              configuration: "storage file",
-              file_form: "mp4",
-              file_path: "baz.mp4",
-              local_url: sampleUrl( "baz.mp4" )
+          } );
+
+          assert.deepEqual( watchFiles.log.lastCall.args, [
+            "error",
+            "file-insufficient-disk-space-error",
+            {
+              errorMessage: "Insufficient disk space",
+              errorDetail: ""
+            },
+            {
+              storage: {
+                configuration: "storage file",
+                file_form: "mp4",
+                file_path: "baz.mp4",
+                local_url: sampleUrl( "baz.mp4" )
+              }
             }
-          }
-        ]);
-
-        watchFiles.log.restore();
-      } );
-
-      test( "should handle deleting files", () => {
-        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
-
-        watchFiles._handleSingleFileUpdate( {
-          filePath: "foo.jpg",
-          fileUrl: sampleUrl( "foo.jpg" ),
-          status: "deleted",
+          ]);
         } );
 
-        assert.equal( watchFiles.watchedFileDeletedCallback.callCount, 1 );
-        assert.equal( watchFiles.managedFiles.length, 1);
-        assert.equal( watchFiles._managedFilesInError.length, 0);
+        test( "should handle deleting files", () => {
+          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+
+          watchFiles._handleSingleFileUpdate( {
+            filePath: "foo.jpg",
+            fileUrl: sampleUrl( "foo.jpg" ),
+            status: "deleted",
+          } );
+
+          assert.equal( watchFiles.watchedFileDeletedCallback.callCount, 1 );
+          assert.equal( watchFiles.managedFiles.length, 1);
+          assert.equal( watchFiles._managedFilesInError.length, 0);
+        } );
+
+        test( "should handle deleted file as warning", () => {
+          watchFiles._handleSingleFileError( {
+            status: "NOEXIST",
+            filePath: "baz.mp4",
+            fileUrl: sampleUrl( "baz.mp4" )
+          } );
+
+          assert.deepEqual( watchFiles.log.lastCall.args, [
+            "warning",
+            "file-not-found",
+            {
+              errorMessage: undefined,
+              errorDetail: undefined
+            },
+            {
+              storage: {
+                configuration: "storage file",
+                file_form: "mp4",
+                file_path: "baz.mp4",
+                local_url: sampleUrl( "baz.mp4" )
+              }
+            }
+          ]);
+        } );
+
       } );
+
     } );
 
     suite( "ordering", () => {
