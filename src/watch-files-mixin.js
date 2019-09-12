@@ -140,7 +140,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
       this.log( logLevel, errorName, {
         errorMessage: message.errorMessage,
         errorDetail: message.errorDetail
-      }, { storage: super._getStorageData( filePath, fileUrl ) });
+      }, { storage: super.getStorageData( filePath, fileUrl ) });
 
       if ( this.getManagedFile( filePath )) {
         // remove this file from the file list since there was a problem with its new version being provided
