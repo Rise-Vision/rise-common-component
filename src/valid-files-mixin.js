@@ -19,16 +19,8 @@ export const ValidFilesMixin = dedupingMixin( base => {
       Object.assign( this.validFilesConfig, validFilesConfig );
     }
 
-    _getStorageFileFormat( filePath ) {
-      if ( !filePath || typeof filePath !== "string" ) {
-        return "";
-      }
-
-      return filePath.substr( filePath.lastIndexOf( "." ) + 1 ).toLowerCase();
-    }
-
     _isValidFileType( path, validTypes ) {
-      const format = this._getStorageFileFormat( path );
+      const format = super.getStorageFileFormat( path );
 
       for ( let i = 0, len = validTypes.length; i < len; i++ ) {
         if ( format.indexOf( validTypes[ i ]) !== -1 ) {
@@ -65,12 +57,7 @@ export const ValidFilesMixin = dedupingMixin( base => {
 
       invalidFiles.forEach( invalidFile => {
         super.log( ValidFiles.LOG_TYPE_ERROR, "format-invalid", null, {
-          storage: {
-            configuration: "storage file",
-            file_form: this._getStorageFileFormat( invalidFile ),
-            file_path: invalidFile,
-            local_url: ""
-          }
+          storage: super.getStorageData( invalidFile )
         });
       });
 
