@@ -48,6 +48,23 @@ export const LoggerMixin = dedupingMixin( base => {
         break;
       }
     }
+
+    _getStorageData( file, url ) {
+      return {
+        configuration: "storage file",
+        file_form: this._getStorageFileFormat( file ),
+        file_path: file,
+        local_url: url || ""
+      }
+    }
+
+    _getStorageFileFormat( filePath ) {
+      if ( !filePath || typeof filePath !== "string" ) {
+        return "";
+      }
+
+      return filePath.substr( filePath.lastIndexOf( "." ) + 1 ).toLowerCase();
+    }
   }
 
   return Logger;
