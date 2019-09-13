@@ -1,6 +1,6 @@
 {
   "name": "rise-common-component",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Common utilities for Rise Vision Web components used in Template pages",
   "scripts": {
     "prebuild": "eslint . && ./scripts/create_config.sh prod rise-element",
