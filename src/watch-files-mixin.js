@@ -30,14 +30,6 @@ export const WatchFilesMixin = dedupingMixin( base => {
 
     watchedFileErrorCallback() {}
 
-    _getStorageFileFormat( filePath ) {
-      if ( !filePath || typeof filePath !== "string" ) {
-        return "";
-      }
-
-      return filePath.substr( filePath.lastIndexOf( "." ) + 1 ).toLowerCase();
-    }
-
     _manageFileInError( details, fixed ) {
       const { filePath, params } = details;
 
@@ -122,7 +114,9 @@ export const WatchFilesMixin = dedupingMixin( base => {
       const { filePath, fileUrl } = message,
         details = { filePath, errorMessage: message.errorMessage, errorDetail: message.errorDetail },
         fileInError = this._getManagedFileInError( filePath ),
-        errorName = ( "NOEXIST" === message.status.toUpperCase() && !message.errorMessage ) ? "file-not-found" :
+        isFileNotFound = "NOEXIST" === message.status.toUpperCase() && !message.errorMessage,
+        logLevel = isFileNotFound ? WatchFiles.LOG_TYPE_WARNING : WatchFiles.LOG_TYPE_ERROR,
+        errorName = isFileNotFound ? "file-not-found" :
           ( message.errorMessage === "Insufficient disk space" ? "file-insufficient-disk-space-error" : "file-rls-error" );
 
       // prevent repetitive logging when component instance is receiving messages from other potential component instances watching same file
@@ -143,17 +137,10 @@ export const WatchFilesMixin = dedupingMixin( base => {
         "Invalid response with status code [CODE]"
        */
 
-      this.log( WatchFiles.LOG_TYPE_ERROR, errorName, {
+      this.log( logLevel, errorName, {
         errorMessage: message.errorMessage,
         errorDetail: message.errorDetail
-      }, {
-        storage: {
-          configuration: "storage file",
-          file_form: this._getStorageFileFormat( filePath ),
-          file_path: filePath,
-          local_url: fileUrl || ""
-        }
-      });
+      }, { storage: super.getStorageData( filePath, fileUrl ) });
 
       if ( this.getManagedFile( filePath )) {
         // remove this file from the file list since there was a problem with its new version being provided
