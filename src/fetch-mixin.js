@@ -118,7 +118,7 @@ export const FetchMixin = dedupingMixin( base => {
         this._requestRetryCount = 0;
 
         if ( err && err.isOffline ) {
-          super.log( "warning", "client offline", { error: err ? err.message : null }, true );
+          super.log( "warning", "client offline", { error: err ? err.message : null });
         } else {
           super.log( "error", "request error", { error: err ? err.message : null });
         }
