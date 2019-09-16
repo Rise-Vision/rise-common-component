@@ -310,7 +310,7 @@
 
           fetchMixin._handleFetchError( { message: "error", isOffline: true } );
 
-          assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "client offline", {error: "error"}]);
+          assert.deepEqual(loggerMixin.log.getCall(0).args, ["warning", "client offline", {error: "error"}]);
 
           assert.isTrue( handleError.called );
         });

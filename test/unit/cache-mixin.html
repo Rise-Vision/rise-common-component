@@ -75,7 +75,7 @@
 
     suite( "init", () => {
       test( "should cache with defaults", () => {
-        cache.getCache();
+        cache.initCache();
 
         assert.isTrue( caches.open.calledWith( "cache-mixin" ) );
       });
