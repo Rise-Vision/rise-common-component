@@ -31,6 +31,12 @@ export const LoggerMixin = dedupingMixin( base => {
       return "error";
     }
 
+    static get LOG_AT_MOST_ONCE_PER_DAY() {
+      return {
+        _logAtMostOncePerDay: true
+      };
+    }
+
     log( type, event, details = null, additionalFields ) {
       if ( RisePlayerConfiguration.isPreview()) {
         return;

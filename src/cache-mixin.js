@@ -115,12 +115,12 @@ export const CacheMixin = dedupingMixin( base => {
     _getCache() {
       if ( this._caches ) {
         if ( !( window.caches && window.caches.open )) {
-          super.log( "warning", "cache API not available", true );
+          super.log( Cache.LOG_TYPE_WARNING, "cache API not available", {}, Cache.LOG_AT_MOST_ONCE_PER_DAY );
         }
 
         return this._caches.open( this.cacheConfig.name );
       } else {
-        super.log( "warning", "localStorage fallback API not available", true );
+        super.log( Cache.LOG_TYPE_WARNING, "localStorage fallback API not available", {}, Cache.LOG_AT_MOST_ONCE_PER_DAY );
 
         return Promise.reject();
       }
@@ -157,7 +157,7 @@ export const CacheMixin = dedupingMixin( base => {
         return this._getCache().then( cache => {
           return cache.put( response.url || url, response );
         }).catch( err => {
-          super.log( "warning", "cache put failed", { url: response.url || url, err });
+          super.log( Cache.LOG_TYPE_WARNING, "cache put failed", { url: response.url || url, err }, Cache.LOG_AT_MOST_ONCE_PER_DAY );
         });
       } else {
         return Promise.resolve();
