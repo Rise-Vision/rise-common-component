@@ -93,7 +93,7 @@ export const RiseElementMixin = dedupingMixin( base => {
       }
 
       _handleStart() {
-        super.log( "info", "start received" );
+        super.log( riseElement.LOG_TYPE_INFO, "start received" );
       }
 
       _handleUptimeRequest() {
