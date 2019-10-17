@@ -31,6 +31,10 @@
     validFiles = new ValidFiles();
   });
 
+  teardown(()=>{
+    sinon.restore();
+  });
+
   suite("valid files", () => {
     suite( "init", () => {
       test( "should init validFiles", () => {
@@ -132,6 +136,37 @@
         });
       })
     } );
+
+    suite( "validateFiles", () => {
+      test( "should return blank values if files are not valid", () => {
+        sinon.stub( validFiles, "_isValidFiles" ).returns(false);
+
+        assert.deepEqual( validFiles.validateFiles("files", "types"), { validFiles: [], invalidFiles: [] });
+        assert.isTrue( validFiles._isValidFiles.calledWith("files") );
+      });
+
+      test( "should return valid files if files are valid and there's no validTypes filter", () => {
+        sinon.stub( validFiles, "_isValidFiles" ).returns(true);
+
+        assert.deepEqual( validFiles.validateFiles("files"), { validFiles: "files", invalidFiles: [] });
+      });
+
+      test( "should return valid files if files are valid and validTypes is empty", () => {
+        sinon.stub( validFiles, "_isValidFiles" ).returns(true);
+
+        assert.deepEqual( validFiles.validateFiles("files", []), { validFiles: "files", invalidFiles: [] });
+      });
+
+      test( "should return filtered files if files are valid and validTypes are provided", () => {
+        sinon.stub( validFiles, "_isValidFiles" ).returns(true);
+        sinon.stub( validFiles, "_filterInvalidFileTypes" ).returns("filteredFiles");
+
+        assert.equal( validFiles.validateFiles("files", ["filter"]), "filteredFiles");
+        assert.isTrue( validFiles._filterInvalidFileTypes.calledWith("files", ["filter"]) );
+      });
+
+    });
+
   });
 </script>
 

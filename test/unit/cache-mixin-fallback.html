@@ -113,6 +113,21 @@
         });
       });
 
+      test( "should handle failure to parse json", done => {
+        const expiration = new Date();
+        const cacheString = "resp";
+        localStorage.setItem("cache-mixinkey4", cacheString);
+
+        cache.getCache("key4").then( data => {
+          assert.isTrue( data instanceof Response );
+
+          done();
+        }).catch( error => {
+          done(error);
+        });
+      });
+
+
       test( "should send cached data if cache is valid", done => {
         const expiration = new Date();
         const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
@@ -120,6 +135,20 @@
 
         cache.getCache("key4").then( data => {
           assert.isTrue( data instanceof Response );
+
+          done();
+        }).catch( error => {
+          done(error);
+        });
+      });
+
+      test( "should set response url property", done => {
+        const expiration = new Date();
+        const cacheString = JSON.stringify({"url": "someURL", "headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
+        localStorage.setItem("cache-mixinkey4", cacheString);
+
+        cache.getCache("key4").then( data => {
+          assert.isTrue( data.url === "someURL" );
 
           done();
         }).catch( error => {

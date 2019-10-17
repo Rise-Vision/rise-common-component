@@ -49,6 +49,65 @@
       sinon.restore();
     });
 
+    suite( "init", () => {
+      test( "should fetch with defaults", () => {
+        var fetchConfig = fetchMixin.fetchConfig;
+        fetchMixin.initFetch();
+
+        assert.deepEqual( fetchMixin.fetchConfig, fetchConfig );
+      });
+
+      test( "should init fetch", () => {
+        fetchMixin.initFetch({
+          name: "rise-common-component",
+        }, "processData", "processError" );
+
+        assert.isTrue( fetchMixin.fetchConfig.name === "rise-common-component" );
+        assert.isTrue( fetchMixin.processData === "processData" );
+        assert.isTrue( fetchMixin.processError === "processError" );
+      });
+
+      test( "should init cache refresh as 5 seconds less", () => {
+        cacheMixin.initCache = sinon.stub();
+
+        fetchMixin.initFetch();
+
+        assert.isTrue( cacheMixin.initCache.called );
+        assert.deepEqual( cacheMixin.initCache.getCall(0).args[0], { refresh: ( 1000 * 60 * 60 - 5 * 1000 )} );
+      });
+
+      test( "should init cache refresh with the default value if under 10s", () => {
+        fetchMixin.fetchConfig.refresh = 10 * 1000;
+        cacheMixin.initCache = sinon.stub();
+
+        fetchMixin.initFetch();
+
+        assert.isTrue( cacheMixin.initCache.called );
+        assert.deepEqual( cacheMixin.initCache.getCall(0).args[0], { refresh: ( 10 * 1000 )} );
+      });
+    });
+
+    suite( "fetch", () => {
+      setup(() => {
+        sinon.stub(fetchMixin.__proto__, "_refresh");
+      });
+
+      test( "should not do anything if URL is missing", () => {
+        fetchMixin.fetch();
+
+        assert.isFalse( fetchMixin._refresh.called );
+      });
+
+      test( "should update parameters and start refresh mechanism", () => {
+        fetchMixin.fetch("some url", "some headers");
+
+        assert.isTrue( fetchMixin._url === "some url" );
+        assert.isTrue( fetchMixin._headers === "some headers" );
+        assert.isTrue( fetchMixin._requestRetryCount === 0 );
+        assert.isTrue( fetchMixin._refresh.calledWith(0) );
+      });
+    });
+
     suite( "_getData", () => {
       test( "should get the result from cache", done => {
         cacheMixin.getCache = sinon.stub().resolves( new Response("text") );

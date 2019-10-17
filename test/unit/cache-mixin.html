@@ -188,7 +188,7 @@
     suite("put", () => {
       setup(() => {
         cachesOpen = {
-          put: sinon.spy()
+          put: sinon.stub().resolves()
         };
         caches.open.resolves(cachesOpen);
       });
@@ -198,29 +198,76 @@
           url: "key3",
           data: {}
         }
-        cache.putCache( res );
-
-        setTimeout(() => {
+        cache.putCache( res ).then(() => {
           assert.isTrue( cachesOpen.put.calledWith( 'key3', res ));
 
           done();
-        }, 10);
+        });
       });
 
       test("should store url as key and the object when url provided as function parameter", done => {
         var res = {
           data: {}
         }
-        cache.putCache( res, "key3" );
-
-        setTimeout(() => {
+        cache.putCache( res, "key3" ).then(() => {
           assert.isTrue( cachesOpen.put.calledWith( 'key3', res ));
 
           done();
-        }, 10);
+        });
       });
+
+      test("should handle failure to put cache", done => {
+        cachesOpen.put.rejects();
+        var res = {
+          url: "key3",
+          data: {}
+        }
+        cache.putCache( res ).then(() => {
+          assert.isTrue( logger.log.called );
+
+          done();
+        });
+      });
+
     });
 
+    suite("no _caches available", () => {
+      var _caches;
+
+      setup(() => {
+        _caches = cache._caches;
+        cache._caches = undefined;
+      });
+
+      teardown(() => {
+        cache._caches = _caches;
+      });
+
+      test("should reject _getCache if _caches is not available", done => {
+        cache._getCache().catch(() => {
+          assert.isTrue( true );
+
+          done();
+        });
+      });      
+
+      test("should reject get if _caches is not available", done => {
+        cache.getCache( "key3" ).catch(() => {
+          assert.isTrue( true );
+
+          done();
+        });
+      });
+
+      test("should resolve put if _caches is not available", done => {
+        cache.putCache( {} , "key3" ).then(() => {
+          assert.isTrue( true );
+
+          done();
+        });
+      });
+      
+    });
   });
 </script>
 
