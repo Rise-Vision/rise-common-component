@@ -113,7 +113,7 @@
         });
       });
 
-      test( "should handle failure to parse invalid json returned from from storage", done => {
+      test( "should handle failure to parse invalid json returned from storage", done => {
         const expiration = new Date();
         const cachedJsonString = "resp";
         localStorage.setItem("cache-mixinkey4", cachedJsonString);
