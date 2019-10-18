@@ -103,7 +103,7 @@
         assert.isTrue(window.fetch.calledWith("https://widgets.risevision.com", { method: "HEAD" }));
       });
 
-      test( "should resolve true if api responds", done => {
+      test( "should resolve false if api responds", done => {
         window.fetch.resolves();
 
         element.isOffline().then( resp => {
@@ -113,7 +113,7 @@
         });
       });
 
-      test( "should resolve false if api rejects", done => {
+      test( "should resolve true if api rejects", done => {
         window.fetch.rejects();
 
         element.isOffline().then( resp => {

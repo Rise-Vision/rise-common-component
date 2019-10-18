@@ -113,10 +113,10 @@
         });
       });
 
-      test( "should handle failure to parse json", done => {
+      test( "should handle failure to parse invalid json returned from from storage", done => {
         const expiration = new Date();
-        const cacheString = "resp";
-        localStorage.setItem("cache-mixinkey4", cacheString);
+        const cachedJsonString = "resp";
+        localStorage.setItem("cache-mixinkey4", cachedJsonString);
 
         cache.getCache("key4").then( data => {
           assert.isTrue( data instanceof Response );
@@ -130,8 +130,8 @@
 
       test( "should send cached data if cache is valid", done => {
         const expiration = new Date();
-        const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
-        localStorage.setItem("cache-mixinkey4", cacheString);
+        const cachedJsonString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
+        localStorage.setItem("cache-mixinkey4", cachedJsonString);
 
         cache.getCache("key4").then( data => {
           assert.isTrue( data instanceof Response );
@@ -144,8 +144,8 @@
 
       test( "should set response url property", done => {
         const expiration = new Date();
-        const cacheString = JSON.stringify({"url": "someURL", "headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
-        localStorage.setItem("cache-mixinkey4", cacheString);
+        const cachedJsonString = JSON.stringify({"url": "someURL", "headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
+        localStorage.setItem("cache-mixinkey4", cachedJsonString);
 
         cache.getCache("key4").then( data => {
           assert.isTrue( data.url === "someURL" );
@@ -158,8 +158,8 @@
 
       test( "should not delete expired cached data if expiry is valid", done => {
         const expiration = new Date(Date.now() - 1000 * 60 * 60 * 3);
-        const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
-        localStorage.setItem("cache-mixinkey4", cacheString);
+        const cachedJsonString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
+        localStorage.setItem("cache-mixinkey4", cachedJsonString);
 
         cache.getCache("key4").then(() => {
           done("error");
@@ -173,8 +173,8 @@
 
       test( "should delete expired cached data", done => {
         const expiration = new Date('1980-01-01');
-        const cacheString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
-        localStorage.setItem("cache-mixinkey4", cacheString);
+        const cachedJsonString = JSON.stringify({"headers":[["content-type","text/plain;charset=UTF-8"],["date",expiration]],"status":200,"statusText":"","text":"<report><observation temperature=\"12\"/><location/></report>"})
+        localStorage.setItem("cache-mixinkey4", cachedJsonString);
 
         cache.getCache("key4").then(() => {
           done("error");
