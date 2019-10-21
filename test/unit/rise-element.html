@@ -47,7 +47,6 @@
       sinon.restore();
     });
 
-
     suite( "connectedCallback", () => {
       test( "should init uptime check", () => {
         sinon.stub( window, "addEventListener" );
@@ -90,6 +89,38 @@
 
         assert.isTrue( element._init.calledOnce );
         assert.isFalse( stub.calledTwice );
+      });
+    });
+
+    suite( "isOffline", () => {
+      setup(() => {
+        sinon.stub(window, "fetch");
+      });
+
+      test( "should call fetch api", () => {
+        element.isOffline();
+
+        assert.isTrue(window.fetch.calledWith("https://widgets.risevision.com", { method: "HEAD" }));
+      });
+
+      test( "should resolve false if api responds", done => {
+        window.fetch.resolves();
+
+        element.isOffline().then( resp => {
+          assert.isFalse( resp );
+
+          done();
+        });
+      });
+
+      test( "should resolve true if api rejects", done => {
+        window.fetch.rejects();
+
+        element.isOffline().then( resp => {
+          assert.isTrue( resp );
+
+          done();
+        });
       });
     });
 

@@ -1,6 +1,6 @@
 {
   "name": "rise-common-component",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Common utilities for Rise Vision Web components used in Template pages",
   "scripts": {
     "prebuild": "eslint . && ./scripts/create_config.sh prod rise-element",
@@ -27,15 +27,17 @@
   "homepage": "https://github.com/Rise-Vision/rise-common-component#readme",
   "dependencies": {
     "@polymer/polymer": "3.1.0",
-    "@webcomponents/webcomponentsjs": "^2.1.3"
+    "@polymer/test-fixture": "~4.0.2",
+    "@webcomponents/webcomponentsjs": "~2.1.3",
+    "chai": "~4.2.0",
+    "coveralls": "~3.0.6",
+    "mocha": "~5.2.0",
+    "sinon": "~7.3.2",
+    "wct-istanbul": "~0.14.3",
+    "wct-mocha": "~1.0.0"
   },
   "devDependencies": {
-    "@polymer/test-fixture": "^4.0.2",
-    "chai": "^4.2.0",
-    "eslint": "^5.6.1",
-    "eslint-config-idiomatic": "^4.0.0",
-    "mocha": "^5.2.0",
-    "sinon": "^7.3.2",
-    "wct-mocha": "^1.0.0"
+    "eslint": "~5.6.1",
+    "eslint-config-idiomatic": "~4.0.0"
   }
 }
