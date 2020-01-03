@@ -1,0 +1,66 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../../../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+  <script src="../../../node_modules/mocha/mocha.js"></script>
+  <script src="../../../node_modules/chai/chai.js"></script>
+  <script src="../../../node_modules/wct-mocha/wct-mocha.js"></script>
+  <script src="../../../node_modules/sinon/pkg/sinon.js"></script>
+
+  <script type="text/javascript">
+    RisePlayerConfiguration = {
+      Logger: {},
+      isPreview: () => false,
+      isConfigured: () => false
+    };
+  </script>
+  <script src="./rise-test-element.js" type="module"></script>
+</head>
+<body>
+<test-fixture id="test-block">
+  <template>
+    <rise-test-element id="rise-1" value="text"></rise-test-element>
+  </template>
+</test-fixture>
+
+<script type="module">
+  suite("rise-test-element", () => {
+    let element;
+
+    setup(()=>{
+      element = fixture("test-block");
+
+      RisePlayerConfiguration.Logger.info = sinon.spy();
+      RisePlayerConfiguration.Logger.warning = sinon.spy();
+      RisePlayerConfiguration.Logger.error = sinon.spy();
+    });
+
+    teardown(()=>{
+      RisePlayerConfiguration.Logger = {};
+    });
+
+    suite("rise-test-element / logger", () => {
+      suite( "init", () => {
+        test( "should log with right version", () => {
+          element.firstUpdated();
+          element.log( 'info' );
+
+          assert.isTrue( RisePlayerConfiguration.Logger.info.called );
+          assert.deepEqual( RisePlayerConfiguration.Logger.info.getCall(0).args[0], {
+            name: "rise-test-element",
+            id: "rise-1",
+            version: "200"
+          });
+        });
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
