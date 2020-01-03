@@ -90,7 +90,6 @@ export const RiseElementMixin = dedupingMixin( base => {
       }
 
       _init() {
-        console.log( "configuring start" ); // eslint-disable-line no-console
         this.addEventListener( riseElement.EVENT_START, this._handleStart, { once: true });
 
         this._sendEvent( riseElement.EVENT_CONFIGURED );
@@ -105,7 +104,6 @@ export const RiseElementMixin = dedupingMixin( base => {
       }
 
       _handleStart() {
-        console.log( "handling start" ); // eslint-disable-line no-console
         super.log( riseElement.LOG_TYPE_INFO, "start received" );
       }
 
