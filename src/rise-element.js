@@ -1,3 +1,4 @@
+import { LitElement } from "lit-element";
 import { PolymerElement } from "@polymer/polymer";
 import { dedupingMixin } from "@polymer/polymer/lib/utils/mixin.js";
 
@@ -52,6 +53,16 @@ export const RiseElementMixin = dedupingMixin( base => {
       ready() {
         super.ready();
 
+        this._onReady();
+      }
+
+      firstUpdated( properties ) {
+        super.firstUpdated( properties );
+
+        this._onReady();
+      }
+
+      _onReady() {
         super.initLogger({
           name: this.tagName.toLowerCase(),
           id: this.id,
@@ -79,9 +90,10 @@ export const RiseElementMixin = dedupingMixin( base => {
       }
 
       _init() {
-        this.addEventListener( RiseElement.EVENT_START, this._handleStart, { once: true });
+        console.log( "configuring start" ); // eslint-disable-line no-console
+        this.addEventListener( riseElement.EVENT_START, this._handleStart, { once: true });
 
-        this._sendEvent( RiseElement.EVENT_CONFIGURED );
+        this._sendEvent( riseElement.EVENT_CONFIGURED );
       }
 
       _sendEvent( eventName, detail = {}) {
@@ -93,6 +105,7 @@ export const RiseElementMixin = dedupingMixin( base => {
       }
 
       _handleStart() {
+        console.log( "handling start" ); // eslint-disable-line no-console
         super.log( riseElement.LOG_TYPE_INFO, "start received" );
       }
 
@@ -118,8 +131,13 @@ export const RiseElementMixin = dedupingMixin( base => {
 
     return riseElement;
   }),
-  RiseElement = RiseElementMixin( PolymerElement );
+  RiseElement = RiseElementMixin( PolymerElement ),
+  RiseLitElement = RiseElementMixin( LitElement );
 
 if ( !customElements.get( "rise-element" )) {
   customElements.define( "rise-element", RiseElement );
+}
+
+if ( !customElements.get( "rise-lit-element" )) {
+  customElements.define( "rise-lit-element", RiseLitElement );
 }

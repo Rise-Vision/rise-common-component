@@ -1,0 +1,208 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../../../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+  <script src="../../../node_modules/mocha/mocha.js"></script>
+  <script src="../../../node_modules/chai/chai.js"></script>
+  <script src="../../../node_modules/wct-mocha/wct-mocha.js"></script>
+  <script src="../../../node_modules/sinon/pkg/sinon.js"></script>
+
+  <script type="text/javascript">
+    RisePlayerConfiguration = {
+      isConfigured: () => false
+    };
+  </script>
+  <script src="../../../src/rise-common-component-config.js" type="module"></script>
+  <script src="../../../src/rise-element.js" type="module"></script>
+
+</head>
+<body>
+<test-fixture id="test-block">
+  <template>
+    <rise-lit-element id="rise-1"></rise-lit-element>
+  </template>
+</test-fixture>
+
+<script type="module">
+
+  suite("rise-lit-element", () => {
+    let element;
+    let logger;
+
+    setup(() => {
+      element = fixture("test-block");
+
+      logger = element.__proto__.__proto__;
+
+      sinon.stub(logger, "initLogger");
+      sinon.stub(logger, "log");
+    });
+
+    teardown(()=>{
+      sinon.restore();
+    });
+
+    suite( "connectedCallback", () => {
+      test( "should init uptime check", () => {
+        sinon.stub( window, "addEventListener" );
+        element.connectedCallback();
+        assert.isTrue( window.addEventListener.calledWith("component-uptime-request") );
+      });
+    });
+
+    suite( "disconnectedCallback", () => {
+      test( "should stop listening for uptime", () => {
+        sinon.stub( window, "removeEventListener" );
+        element.disconnectedCallback();
+        assert.isTrue( window.removeEventListener.calledWith("component-uptime-request") );
+      });
+    });
+
+    suite( "firstUpdated", () => {
+      let stub;
+
+      setup(()=>{
+        stub = sinon.stub( window, "addEventListener" );
+      });
+
+      test( "should listen for rise-components-ready and call init", () => {
+        element.firstUpdated();
+        assert.isTrue( stub.calledWith('rise-components-ready') );
+      });
+
+      test( "should init mixins ", () => {
+        element.firstUpdated();
+
+        assert.isTrue( logger.initLogger.called );
+      });
+
+      test( "should call _init() if  RisePlayerConfiguration is configured", () => {
+        sinon.stub( element, '_init');
+
+        RisePlayerConfiguration.isConfigured = () => true ;
+        element.firstUpdated();
+
+        assert.isTrue( element._init.calledOnce );
+        assert.isFalse( stub.calledTwice );
+      });
+    });
+
+    suite( "isOffline", () => {
+      setup(() => {
+        sinon.stub(window, "fetch");
+      });
+
+      test( "should call fetch api", () => {
+        element.isOffline();
+
+        assert.isTrue(window.fetch.calledWith("https://widgets.risevision.com", { method: "HEAD" }));
+      });
+
+      test( "should resolve false if api responds", done => {
+        window.fetch.resolves();
+
+        element.isOffline().then( resp => {
+          assert.isFalse( resp );
+
+          done();
+        });
+      });
+
+      test( "should resolve true if api rejects", done => {
+        window.fetch.rejects();
+
+        element.isOffline().then( resp => {
+          assert.isTrue( resp );
+
+          done();
+        });
+      });
+    });
+
+    suite( "init", () => {
+      test( "should listen for start' event", () => {
+        sinon.stub(element, "addEventListener");
+
+        element._init();
+        assert.isTrue(element.addEventListener.calledWith( "start" ));
+      });
+
+      test( "should raise 'configured' event", () => {
+        sinon.stub(element, "dispatchEvent");
+
+        element._init();
+        assert.equal(element.dispatchEvent.getCall(0).args[0].type, "configured");
+      });
+    });
+
+    suite( "'start' event", () => {
+      test( "should start", () => {
+        element._init();
+        element.dispatchEvent( new CustomEvent( "start" ) );
+
+        assert.deepEqual( logger.log.getCall(0).args, ["info", "start received"] );
+      });
+    });
+
+    suite( "_handleUptimeRequest", () => {
+      test( "should send 'component-uptime-result'", () => {
+        sinon.stub(window, "dispatchEvent");
+
+        element._handleUptimeRequest();
+
+        assert.isTrue(window.dispatchEvent.calledOnce);
+        assert.equal(window.dispatchEvent.getCall(0).args[0].type, "component-uptime-result");
+        assert.deepEqual(window.dispatchEvent.getCall(0).args[0].detail, {
+          component_id: "rise-1",
+          component_type: "rise-lit-element",
+          error: false
+        });
+      });
+
+      test( "should forward error status from _setUptimeError()", () => {
+        sinon.stub(window, "dispatchEvent");
+
+        element._handleUptimeRequest();
+
+        assert.isTrue(window.dispatchEvent.calledOnce);
+        assert.isFalse(window.dispatchEvent.getCall(0).args[0].detail.error);
+
+        element._setUptimeError(true);
+        element._handleUptimeRequest();
+
+        assert.isTrue(window.dispatchEvent.getCall(1).args[0].detail.error);
+      });
+    });
+
+    suite( "_setUptimeError", () => {
+      test( "should update _uptimeError value", () => {
+        element._setUptimeError(true);
+        assert.isTrue(element._uptimeError);
+
+        element._setUptimeError(false);
+        assert.isFalse(element._uptimeError);
+      });
+
+      test( "should report no error by default", () => {
+        assert.isFalse(element._uptimeError);
+      });
+    });
+
+    suite( "_sendDoneEvent", () => {
+      test( "should send 'report-done' event", () => {
+        sinon.stub(element, "_sendEvent");
+        element._sendDoneEvent(true);
+        assert.isTrue(element._sendEvent.calledWith("report-done", {done: true}));
+      });
+    });
+
+  });
+</script>
+
+</body>
+</html>
