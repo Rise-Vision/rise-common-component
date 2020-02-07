@@ -31,6 +31,23 @@ export const RiseElementMixin = dedupingMixin( base => {
       static get EVENT_START() {
         return "start";
       }
+      static get EVENT_DATA_UPDATE() {
+        return "data-update";
+      }
+      static get EVENT_DATA_ERROR() {
+        return "data-error";
+      }
+      static get EVENT_REQUEST_ERROR() {
+        return "request-error";
+      }
+      static get EVENT_CLIENT_OFFLINE() {
+        return "client-offline"
+      }
+
+      // General constants
+      static get STORAGE_PREFIX() {
+        return "https://storage.googleapis.com/";
+      }
 
       constructor() {
         super();
