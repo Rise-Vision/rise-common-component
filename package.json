@@ -3,6 +3,7 @@
   "version": "1.3.2",
   "description": "Common utilities for Rise Vision Web components used in Template pages",
   "scripts": {
+    "preinstall": "npx npm-force-resolutions || true",
     "prebuild": "eslint . && ./scripts/create_config.sh prod rise-element",
     "build": "polymer build && ./scripts/extract-source.sh rise-element",
     "pretest": "eslint . && ./scripts/create_config.sh test rise-element",
@@ -41,6 +42,7 @@
     "eslint-config-idiomatic": "~4.0.0"
   },
   "resolutions": {
-    "braces": "^2.3.1"
+    "braces": "^2.3.1",
+    "micromatch": "~4.0.2"
   }
 }
