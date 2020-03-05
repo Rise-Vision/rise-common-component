@@ -19,6 +19,10 @@
 <script type="module">
   import * as fetchModule from '../../src/fetch-mixin.js';
 
+  const DEFAULT_COOLDOWN = 1000 * 60 * 10;
+  const DEFAULT_REFRESH = 1000 * 60 * 60;
+  const DEFAULT_RETRY = 1000 * 60;
+
   suite("fetch", () => {
     let elementMixin, fetchMixin, cacheMixin, loggerMixin, handleResponse, handleError;
 
@@ -38,9 +42,9 @@
       handleError = sinon.stub();
       fetchMixin.fetchConfig = {};
       fetchMixin.initFetch({
-        retry: 1000 * 60,
-        cooldown: 1000 * 60 * 10,
-        refresh: 1000 * 60 * 60,
+        retry: DEFAULT_RETRY,
+        cooldown: DEFAULT_COOLDOWN,
+        refresh: DEFAULT_REFRESH,
         count: 5
       }, handleResponse, handleError );
     });
@@ -73,7 +77,7 @@
         fetchMixin.initFetch();
 
         assert.isTrue( cacheMixin.initCache.called );
-        assert.deepEqual( cacheMixin.initCache.getCall(0).args[0], { refresh: ( 1000 * 60 * 60 - 5 * 1000 )} );
+        assert.deepEqual( cacheMixin.initCache.getCall(0).args[0], { refresh: ( DEFAULT_REFRESH - 5 * 1000 )} );
       });
 
       test( "should init cache refresh with the default value if under 10s", () => {
@@ -322,7 +326,7 @@
 
           assert.isTrue( fetchMixin._requestRetryCount === 1 );
           assert.isTrue( fetchMixin._refresh.called );
-          assert.isTrue( fetchMixin._refresh.calledWith(1000 * 60) );
+          assert.isTrue( fetchMixin._refresh.calledWith(DEFAULT_RETRY) );
         });
 
         test( "should debounce and call _getData after interval", () => {
@@ -348,7 +352,7 @@
 
           assert.equal( fetchMixin._requestRetryCount, 0 );
           assert.isTrue( fetchMixin._refresh.called );
-          assert.isTrue( fetchMixin._refresh.calledWith(1000 * 60 * 10) );
+          assert.isTrue( fetchMixin._refresh.calledWith(DEFAULT_COOLDOWN) );
 
           assert.deepEqual( loggerMixin.log.getCall(0).args, ["error", "request error", {error: null}] );
 
@@ -496,7 +500,84 @@
         fetchMixin._processData();
 
         assert.isTrue( fetchMixin._refresh.called );
-        assert.isTrue( fetchMixin._refresh.calledWith(60 * 60 * 1000));
+        assert.isTrue( fetchMixin._refresh.calledWith(DEFAULT_REFRESH));
+      });
+    });
+
+    suite( "_getRefreshInterval", () => {
+      test( "get regular refresh interval when refreshFromCacheControlHeader parameter is not set", () => {
+        const interval = fetchMixin._getRefreshInterval({});
+
+        assert.equal( interval, DEFAULT_REFRESH );
+      });
+
+      test( "get refresh interval based on Cache-Control expiration", () => {
+        fetchMixin.fetchConfig.refreshFromCacheControlHeader = true;
+
+        const interval = fetchMixin._getRefreshInterval({
+          headers: {
+            get: () => "private, max-age=100"
+          }
+        });
+
+        const baseInterval = 100 * 1000;
+        const minRefresh = baseInterval + DEFAULT_RETRY;
+        const maxRefresh = minRefresh + DEFAULT_COOLDOWN;
+
+        assert.isTrue( interval >= minRefresh );
+        assert.isTrue( interval <= maxRefresh );
+      });
+
+      test( "get regular refresh interval when offline", () => {
+        fetchMixin.fetchConfig.refreshFromCacheControlHeader = true;
+
+        const interval = fetchMixin._getRefreshInterval({
+          isOffline: true,
+          headers: {
+            get: () => "private, max-age=100"
+          }
+        });
+
+        assert.equal( interval, DEFAULT_REFRESH );
+      });
+
+      test( "get regular refresh interval when cached", () => {
+        fetchMixin.fetchConfig.refreshFromCacheControlHeader = true;
+
+        const interval = fetchMixin._getRefreshInterval({
+          isCached: true,
+          headers: {
+            get: () => "private, max-age=100"
+          }
+        });
+
+        assert.equal( interval, DEFAULT_REFRESH );
+      });
+
+      test( "get regular refresh interval when there is no Cache-Control header", () => {
+        fetchMixin.fetchConfig.refreshFromCacheControlHeader = true;
+
+        const interval = fetchMixin._getRefreshInterval({
+          isCached: true,
+          headers: {
+            get: () => null
+          }
+        });
+
+        assert.equal( interval, DEFAULT_REFRESH );
+      });
+
+      test( "get regular refresh interval when Cache-Control header contains no expiration", () => {
+        fetchMixin.fetchConfig.refreshFromCacheControlHeader = true;
+
+        const interval = fetchMixin._getRefreshInterval({
+          isCached: true,
+          headers: {
+            get: () => "private"
+          }
+        });
+
+        assert.equal( interval, DEFAULT_REFRESH );
       });
     });
 

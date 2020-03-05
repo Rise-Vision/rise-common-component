@@ -1,3 +1,5 @@
+/* eslint-disable one-var */
+
 import { timeOut } from "@polymer/polymer/lib/utils/async.js";
 import { Debouncer } from "@polymer/polymer/lib/utils/debounce.js";
 import { dedupingMixin } from "@polymer/polymer/lib/utils/mixin.js";
@@ -9,6 +11,7 @@ export const FetchMixin = dedupingMixin( base => {
       cooldown: 1000 * 60 * 10,
       refresh: 1000 * 60 * 60,
       avoidRetriesForStatusCodes: [],
+      refreshFromCacheControlHeader: false,
       count: 5
     },
     fetchBase = LoggerMixin( base );
@@ -103,7 +106,30 @@ export const FetchMixin = dedupingMixin( base => {
     _processData( resp ) {
       this.processData && this.processData( resp );
 
-      this._refresh( this.fetchConfig.refresh );
+      const refreshInterval = this._getRefreshInterval( resp );
+
+      console.log( `Refreshing in ${ refreshInterval }` ); // eslint-disable-line no-console
+      this._refresh( refreshInterval );
+    }
+
+    _getRefreshInterval( resp ) {
+      if ( resp && !resp.isCached && !resp.isOffline && this.fetchConfig.refreshFromCacheControlHeader ) {
+        const header = resp.headers && resp.headers.get( "Cache-Control" );
+
+        if ( header ) {
+          const match = header.match( /max-age=(\d+)/ );
+
+          if ( match ) {
+            const expirationInSeconds = Number( match[ 1 ]) * 1000;
+            const smallExtraInterval = this.fetchConfig.retry;
+            const randomExtraInterval = Math.floor( Math.random() * this.fetchConfig.cooldown );
+
+            return expirationInSeconds + smallExtraInterval + randomExtraInterval;
+          }
+        }
+      }
+
+      return this.fetchConfig.refresh;
     }
 
     _logData( cached ) {
