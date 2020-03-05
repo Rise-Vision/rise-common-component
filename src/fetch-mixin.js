@@ -108,7 +108,6 @@ export const FetchMixin = dedupingMixin( base => {
 
       const refreshInterval = this._getRefreshInterval( resp );
 
-      console.log( `Refreshing in ${ refreshInterval }` ); // eslint-disable-line no-console
       this._refresh( refreshInterval );
     }
 
