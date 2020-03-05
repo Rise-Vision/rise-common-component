@@ -196,7 +196,7 @@ The functionality will retrieve the data from the URL, and return it via the `_h
 
 ### Avoid retries depending on HTTP status code
 
-The response status code of a service is an indicative of the problem. In some cases, the status code indicates that a request should not be retried, or at least should not be retried right away. To avoid the retry loop and pass directly to cooldown interval, the `avoidRetriesForStatusCodes` parameer can be used:
+The HTTP response status code of a service invocation is indicative of any problem that happens when invoking that service. In some cases, the status code indicates that a request should not be retried, or at least should not be retried right away. To avoid the retry loop, and go directly to cooldown interval, the `avoidRetriesForStatusCodes` parameer can be used:
 
 ```
 {
