@@ -194,6 +194,21 @@ To use the `fetchMixin`, you can simply call:
 
 The functionality will retrieve the data from the URL, and return it via the `_handleResponse` callback. In case an error is received, and after the retry count has been surpassed, the `_handleError` function will be called.
 
+### Avoid retries depending on HTTP status code
+
+The HTTP response status code of a service invocation is indicative of any problem that happens when invoking that service. In some cases, the status code indicates that a request should not be retried, or at least should not be retried right away. To avoid the retry loop, and go directly to cooldown interval, the `avoidRetriesForStatusCodes` parameer can be used:
+
+```
+{
+  retry: 1000 * 60,
+  cooldown: 1000 * 60 * 10,
+  refresh: 1000 * 60 * 60,
+  count: 5,
+  avoidRetriesForStatusCodes: [400, 403, 429]
+}
+```
+
+In the previous example configuration, the HTTP status codes 400 ( bad request ), 403 ( forbidden ) and 429 ( too many requests ) won't be attempted immediately after the retry period, but only after some cooldown period.
 
 #### Fetch Example
 

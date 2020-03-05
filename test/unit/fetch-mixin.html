@@ -280,6 +280,10 @@
         fetchMixin._requestData().then(() => {
           assert.isTrue( fetchMixin._handleFetchError.called );
 
+          const error = fetchMixin._handleFetchError.lastCall.args[0];
+          assert( error );
+          assert.equal( error.status, 500 );
+
           done();
         });
       });
@@ -372,6 +376,32 @@
           assert.deepEqual(loggerMixin.log.getCall(0).args, ["warning", "client offline", {error: "error"}]);
 
           assert.isTrue( handleError.called );
+        });
+
+        test( "should not retry if status code is excluded", () => {
+          sinon.stub(fetchMixin, "_refresh");
+
+          fetchMixin.fetchConfig.avoidRetriesForStatusCodes = [400];
+          fetchMixin._requestRetryCount = 0;
+
+          fetchMixin._handleFetchError( { status: 400, message: "error", isOffline: false } );
+
+          assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "request error", {error: "error"}]);
+          assert.isTrue( handleError.called );
+          assert.equal( fetchMixin._requestRetryCount, 0 );
+        });
+
+        test( "should retry if status code is excluded but is offline", () => {
+          sinon.stub(fetchMixin, "_refresh");
+
+          fetchMixin.fetchConfig.avoidRetriesForStatusCodes = [400];
+          fetchMixin._requestRetryCount = 0;
+
+          fetchMixin._handleFetchError( { status: 400, message: "error", isOffline: true } );
+
+          assert.isFalse( loggerMixin.log.called );
+          assert.isFalse( handleError.called );
+          assert.equal( fetchMixin._requestRetryCount, 1 );
         });
 
         test( "should debounce existing cooldown", () => {
