@@ -121,10 +121,9 @@ export const FetchMixin = dedupingMixin( base => {
 
           if ( match ) {
             const expirationInSeconds = Number( match[ 1 ]) * 1000;
-            const smallExtraInterval = this.fetchConfig.retry;
             const randomExtraInterval = Math.floor( Math.random() * this.fetchConfig.cooldown );
 
-            return expirationInSeconds + smallExtraInterval + randomExtraInterval;
+            return expirationInSeconds + randomExtraInterval;
           }
         }
       }

@@ -513,19 +513,21 @@
 
       test( "get refresh interval based on Cache-Control expiration", () => {
         fetchMixin.fetchConfig.refreshFromCacheControlHeader = true;
-
-        const interval = fetchMixin._getRefreshInterval({
+        const response = {
           headers: {
             get: () => "private, max-age=100"
           }
-        });
+        };
 
-        const baseInterval = 100 * 1000;
-        const minRefresh = baseInterval + DEFAULT_RETRY;
-        const maxRefresh = minRefresh + DEFAULT_COOLDOWN;
+        for ( var i = 0; i < 100; i++ ) {
+          const interval = fetchMixin._getRefreshInterval( response );
 
-        assert.isTrue( interval >= minRefresh );
-        assert.isTrue( interval <= maxRefresh );
+          const minRefresh = 100 * 1000;
+          const maxRefresh = minRefresh + DEFAULT_COOLDOWN;
+
+          assert.isTrue( interval >= minRefresh );
+          assert.isTrue( interval <= maxRefresh );
+        }
       });
 
       test( "get regular refresh interval when offline", () => {
