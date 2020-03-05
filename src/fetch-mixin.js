@@ -8,6 +8,7 @@ export const FetchMixin = dedupingMixin( base => {
       retry: 1000 * 60,
       cooldown: 1000 * 60 * 10,
       refresh: 1000 * 60 * 60,
+      avoidRetriesForStatusCodes: [],
       count: 5
     },
     fetchBase = LoggerMixin( base );
@@ -83,7 +84,10 @@ export const FetchMixin = dedupingMixin( base => {
 
           super.putCache && super.putCache( resp );
         } else {
-          throw new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
+          const error = new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
+
+          error.status = resp.status;
+          throw error;
         }
       }).catch( err => {
         return super.isOffline().then( isOffline => {
@@ -110,7 +114,7 @@ export const FetchMixin = dedupingMixin( base => {
     }
 
     _handleFetchError( err ) {
-      if ( !this._isMaxRetryAttempt()) {
+      if ( this._shouldRetryFor( err )) {
         this._requestRetryCount += 1;
 
         this._refresh( this.fetchConfig.retry );
@@ -129,8 +133,13 @@ export const FetchMixin = dedupingMixin( base => {
       }
     }
 
-    _isMaxRetryAttempt() {
-      return this._requestRetryCount >= this.fetchConfig.count;
+    _shouldRetryFor( error ) {
+      if ( error && !error.isOffline && error.status &&
+          this.fetchConfig.avoidRetriesForStatusCodes.includes( error.status )) {
+        return false;
+      }
+
+      return this._requestRetryCount < this.fetchConfig.count;
     }
 
   }
