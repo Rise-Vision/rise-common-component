@@ -210,9 +210,9 @@ The HTTP response status code of a service invocation is indicative of any probl
 
 In the previous example configuration, the HTTP status codes 400 ( bad request ), 403 ( forbidden ) and 429 ( too many requests ) won't be attempted immediately after the retry period, but only after some cooldown period.
 
-### Calculate expiration based on Cache-Control header max-age value
+### Calculate expiration based on *Cache-Control* header *max-age* value
 
-Instead of relying in a fixed expiration, fetch-mixin can calculate it's refresh value based on `Cache-Control` header expiration value. To enable this behavior the `refreshFromCacheControlHeader` parameter can be used:
+Instead of relying in a fixed expiration, fetch-mixin can calculate its refresh value based on `Cache-Control` header expiration value. To enable this behavior the `refreshFromCacheControlHeader` parameter can be used:
 
 ```
 {
@@ -221,9 +221,9 @@ Instead of relying in a fixed expiration, fetch-mixin can calculate it's refresh
 }
 ```
 
-This parameter is disabled by default. When enabled, it will calculate a refresh value based on the given expiration value plus a random small interval of time ( no greater than the cooldown parameter ). The extra padding is added to avoid a large number of displays hitting a service at exactly the same time when all their expirations complete.
+This parameter is disabled by default. When enabled, it will calculate a refresh value based on the given expiration value plus a random interval of time no greater than the cooldown parameter. This extra small interval is added to avoid a large number of displays hitting a service at exactly the same time when all their refresh intervals complete.
 
-If the service response contains no Cache-Control header, or if it contains no max-age value, the default `refresh` value will be used.
+If the service response contains no Cache-Control header, or if it contains no `max-age` value, the default `refresh` value will be used.
 
 #### Fetch Example
 
