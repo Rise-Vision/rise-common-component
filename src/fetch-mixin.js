@@ -146,15 +146,25 @@ export const FetchMixin = dedupingMixin( base => {
         this._requestRetryCount = 0;
 
         if ( err && err.isOffline ) {
-          super.log( Fetch.LOG_TYPE_WARNING, "client offline", { error: err ? err.message : null });
+          super.log( Fetch.LOG_TYPE_WARNING, "client offline", this._eventDetailFor( err ));
         } else {
-          super.log( Fetch.LOG_TYPE_ERROR, "request error", { error: err ? err.message : null });
+          super.log( Fetch.LOG_TYPE_ERROR, "request error", this._eventDetailFor( err ));
         }
 
         this.processError && this.processError( err );
 
         this._refresh( this.fetchConfig.cooldown );
       }
+    }
+
+    _eventDetailFor( error ) {
+      const detail = { error: error && error.message ? error.message : null };
+
+      if ( error && error.status ) {
+        detail.status = error.status;
+      }
+
+      return detail;
     }
 
     _shouldRetryFor( error ) {
