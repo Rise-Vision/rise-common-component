@@ -390,7 +390,11 @@
 
           fetchMixin._handleFetchError( { status: 400, message: "error", isOffline: false } );
 
-          assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "request error", {error: "error"}]);
+          assert.deepEqual(loggerMixin.log.getCall(0).args, [
+            "error",
+            "request error",
+            { error: "error", status: 400 }
+          ]);
           assert.isTrue( handleError.called );
           assert.equal( fetchMixin._requestRetryCount, 0 );
         });
@@ -580,6 +584,35 @@
         });
 
         assert.equal( interval, DEFAULT_REFRESH );
+      });
+    });
+
+    suite( "_eventDetailFor", () => {
+      test( "should get event detail for undefined event", () => {
+        const detail = fetchMixin._eventDetailFor();
+
+        assert.deepEqual( detail, { error: null } );
+      });
+
+      test( "should get event detail for event with no message", () => {
+        const detail = fetchMixin._eventDetailFor({});
+
+        assert.deepEqual( detail, { error: null } );
+      });
+
+      test( "should get event detail for event with message", () => {
+        const detail = fetchMixin._eventDetailFor({ message: "FAIL" });
+
+        assert.deepEqual( detail, { error: "FAIL" } );
+      });
+
+      test( "should get event detail for event with message and HTTP status code", () => {
+        const detail = fetchMixin._eventDetailFor({
+          message: "FAIL",
+          status: 403
+        });
+
+        assert.deepEqual( detail, { error: "FAIL", status: 403 } );
       });
     });
 
