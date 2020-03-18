@@ -78,6 +78,18 @@ export const FetchMixin = dedupingMixin( base => {
       });
     }
 
+    _handleRejectedFetch( resp ) {
+      const error = new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
+
+      error.status = resp.status;
+
+      return resp.text().then( text => {
+        error.responseText = text;
+
+        throw error;
+      });
+    }
+
     _requestData( cachedResp ) {
       return fetch( this._url, this._headers ).then( resp => {
         if ( resp.ok ) {
@@ -87,10 +99,7 @@ export const FetchMixin = dedupingMixin( base => {
 
           super.putCache && super.putCache( resp );
         } else {
-          const error = new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
-
-          error.status = resp.status;
-          throw error;
+          return this._handleRejectedFetch( resp );
         }
       }).catch( err => {
         return super.isOffline().then( isOffline => {
