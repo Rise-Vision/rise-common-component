@@ -186,6 +186,10 @@ export const FetchMixin = dedupingMixin( base => {
         detail.status = error.status;
       }
 
+      if ( error && error.responseText ) {
+        detail.responseText = error.responseText;
+      }
+
       return detail;
     }
 

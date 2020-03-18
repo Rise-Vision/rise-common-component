@@ -615,6 +615,15 @@
 
         assert.deepEqual( detail, { error: "FAIL", status: 403 } );
       });
+
+      test( "should get event detail for event with message and response text", () => {
+        const detail = fetchMixin._eventDetailFor({
+          message: "FAIL",
+          responseText: "username not found"
+        });
+
+        assert.deepEqual( detail, { error: "FAIL", responseText: "username not found" } );
+      });
     });
 
   });
