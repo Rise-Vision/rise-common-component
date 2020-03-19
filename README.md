@@ -230,7 +230,7 @@ If the service response contains no Cache-Control header, or if it contains no `
 By default, unsuccessful fetch responses are logged as errors by the `fetchMixin` ( `'error'` event type and `'request error'` event ).
 This behavior can be changed on classes implementing `fetchMixin` by overriding `logTypeForFetchError` function.
 
-For example, for a hypotetical `RiseXyzComponent` that extends `FetchMixin`:
+For example, a hypotetical `RiseXyzComponent` that extends `FetchMixin` could implement this function like this:
 
 ```
 logTypeForFetchError(error) {
