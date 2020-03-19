@@ -1,0 +1,92 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="../../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../../node_modules/@polymer/test-fixture/test-fixture.js"></script>
+  <script src="../../node_modules/mocha/mocha.js"></script>
+  <script src="../../node_modules/chai/chai.js"></script>
+  <script src="../../node_modules/wct-mocha/wct-mocha.js"></script>
+  <script src="../../node_modules/sinon/pkg/sinon.js"></script>
+
+</head>
+
+<body>
+
+<script type="module">
+  import * as fetchModule from '../../src/fetch-mixin.js';
+
+  const DEFAULT_COOLDOWN = 1000 * 60 * 10;
+  const DEFAULT_REFRESH = 1000 * 60 * 60;
+  const DEFAULT_RETRY = 1000 * 60;
+
+  suite("fetch / error type override", () => {
+    const Fetch = fetchModule.FetchMixin(class {});
+
+    let element, loggerMixin;
+
+    teardown(()=>{
+      sinon.restore();
+    });
+
+    suite("default behavior", () => {
+      class ExampleElement extends Fetch {
+      }
+
+      setup(() => {
+        element = new ExampleElement();
+
+        loggerMixin = element.__proto__.__proto__.__proto__;
+
+        sinon.stub(loggerMixin, "log");
+      });
+
+      test( "should return default log type for any error", () => {
+        element._logFetchError();
+
+        assert.isTrue(loggerMixin.log.calledOnce);
+        assert.equal(loggerMixin.log.lastCall.args[0], "error");
+        assert.equal(loggerMixin.log.lastCall.args[1], "request error");
+      });
+    });
+
+    suite("overriding behavior", () => {
+      class ExampleElement extends Fetch {
+        logTypeForFetchError(error) {
+          return error.status === 500 ? "error" : "warning"
+        }
+      }
+
+      setup(() => {
+        element = new ExampleElement();
+
+        loggerMixin = element.__proto__.__proto__.__proto__;
+
+        sinon.stub(loggerMixin, "log");
+      });
+
+      test( "should return error log type", () => {
+        element._logFetchError({ status: 500 });
+
+        assert.isTrue(loggerMixin.log.calledOnce);
+        assert.equal(loggerMixin.log.lastCall.args[0], "error");
+        assert.equal(loggerMixin.log.lastCall.args[1], "request error");
+      });
+
+      test( "should return warning log type", () => {
+        element._logFetchError({ status: 400 });
+
+        assert.isTrue(loggerMixin.log.calledOnce);
+        assert.equal(loggerMixin.log.lastCall.args[0], "warning");
+        assert.equal(loggerMixin.log.lastCall.args[1], "request warning");
+      });
+    });
+
+  });
+</script>
+
+</body>
+</html>

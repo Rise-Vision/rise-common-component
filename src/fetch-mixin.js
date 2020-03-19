@@ -78,6 +78,18 @@ export const FetchMixin = dedupingMixin( base => {
       });
     }
 
+    _handleRejectedFetch( resp ) {
+      const error = new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
+
+      error.status = resp.status;
+
+      return resp.text().then( text => {
+        error.responseText = text;
+
+        throw error;
+      });
+    }
+
     _requestData( cachedResp ) {
       return fetch( this._url, this._headers ).then( resp => {
         if ( resp.ok ) {
@@ -87,10 +99,7 @@ export const FetchMixin = dedupingMixin( base => {
 
           super.putCache && super.putCache( resp );
         } else {
-          const error = new Error( `Request rejected with status ${resp.status}: ${resp.statusText}` );
-
-          error.status = resp.status;
-          throw error;
+          return this._handleRejectedFetch( resp );
         }
       }).catch( err => {
         return super.isOffline().then( isOffline => {
@@ -137,6 +146,23 @@ export const FetchMixin = dedupingMixin( base => {
       }
     }
 
+    logTypeForFetchError() {
+      return Fetch.LOG_TYPE_ERROR;
+    }
+
+    _logFetchError( err ) {
+      const details = this._eventDetailFor( err );
+
+      if ( err && err.isOffline ) {
+        super.log( Fetch.LOG_TYPE_WARNING, "client offline", details );
+      } else {
+        const eventType = this.logTypeForFetchError( err );
+        const event = `request ${ eventType }`;
+
+        super.log( eventType, event, details );
+      }
+    }
+
     _handleFetchError( err ) {
       if ( this._shouldRetryFor( err )) {
         this._requestRetryCount += 1;
@@ -145,11 +171,7 @@ export const FetchMixin = dedupingMixin( base => {
       } else {
         this._requestRetryCount = 0;
 
-        if ( err && err.isOffline ) {
-          super.log( Fetch.LOG_TYPE_WARNING, "client offline", this._eventDetailFor( err ));
-        } else {
-          super.log( Fetch.LOG_TYPE_ERROR, "request error", this._eventDetailFor( err ));
-        }
+        this._logFetchError( err );
 
         this.processError && this.processError( err );
 
@@ -162,6 +184,10 @@ export const FetchMixin = dedupingMixin( base => {
 
       if ( error && error.status ) {
         detail.status = error.status;
+      }
+
+      if ( error && error.responseText ) {
+        detail.responseText = error.responseText;
       }
 
       return detail;

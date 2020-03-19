@@ -225,6 +225,33 @@ This parameter is disabled by default. When enabled, it will calculate a refresh
 
 If the service response contains no Cache-Control header, or if it contains no `max-age` value, the default `refresh` value will be used.
 
+### Log unsuccessful responses as either warning or error
+
+By default, unsuccessful fetch responses are logged as errors by the `fetchMixin` ( `'error'` event type and `'request error'` event ).
+This behavior can be changed on classes implementing `fetchMixin` by overriding `logTypeForFetchError` function.
+
+For example, a hypotetical `RiseXyzComponent` that extends `FetchMixin` could implement this function like this:
+
+```
+logTypeForFetchError(error) {
+  if (!error || !error.status) {
+    return RiseXyzComponent.LOG_TYPE_ERROR;
+  }
+
+  if (error.status === 403 || error.status === 429) {
+    return RiseXyzComponent.LOG_TYPE_WARNING;
+  }
+
+  if (error.status === 404 && error.responseText && error.responseText.startsWith("Username not found:")) {
+    return RiseXyzComponent.LOG_TYPE_WARNING;
+  }
+
+  return RiseXyzComponent.LOG_TYPE_ERROR;
+}
+```
+
+In this case, some status types will result instead in a `'warning'` event type and a `'request warning'` event.
+
 #### Fetch Example
 
 
