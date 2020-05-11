@@ -153,15 +153,21 @@ export const CacheMixin = dedupingMixin( base => {
     }
 
     getCacheRequestKey( url ) {
-      // the intention of this function is it can be overridden by component to customize the key to save/get in cache
+      // the intention of this function is it can be overridden by component to customize the key to get in cache
       // main purpose of using this is when you want to pair a response with a custom string instead of request url
       return url;
+    }
+
+    putCacheRequestKey( response ) {
+      // the intention of this function is it can be overridden by component to customize the key to put in cache
+      // main purpose of using this is when you want to pair a response with a custom string instead of request url
+      return response.url;
     }
 
     putCache( response, url ) {
       if ( this._caches ) {
         return this._getCache().then( cache => {
-          return cache.put( response.url || this.getCacheRequestKey( url ), response );
+          return cache.put( this.putCacheRequestKey( response ) || url, response );
         }).catch( err => {
           super.log( Cache.LOG_TYPE_WARNING, "cache put failed", { url: response.url || url, err }, Cache.LOG_AT_MOST_ONCE_PER_DAY );
         });
