@@ -23,7 +23,9 @@ class RiseDataWeather extends RiseElement {}
 `RiseElement` provides a few utility functions:
 - `ready()` is called by the Component once initialized.
 - `_init()` is called once RisePlayerConfiguration has been initialized.
-- `_handleStart()` is called once the Component is required to start playing.
+- `_handleStart()` is called once the Component is required to start playing. Use it for components with static content like text.
+- `_handleRisePresentationPlay()` is similar to `_handleStart`, but is called every time the component needs to start playing content. Use it for the components with dynamic content like playlist or video.
+- `_handleRisePresentationStop()` is called when component needs to stop playing content. Use it in conjunction with `_handleRisePresentationPlay()`.
 
 You don't have to extend these functions, but if you do, don't forget to call the `super.***()` function to ensure everything works as expected.
 
@@ -60,6 +62,18 @@ class RiseExample extends RiseElement {
 
   _handleStart() {
     super._handleStart();
+
+    // your code here
+  }
+
+  _handleRisePresentationPlay() {
+    super._handleRisePresentationPlay();
+
+    // your code here
+  }
+
+  _handleRisePresentationStop() {
+    super._handleRisePresentationStop();
 
     // your code here
   }

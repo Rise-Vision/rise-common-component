@@ -44,6 +44,7 @@
     });
 
     teardown(()=>{
+      RisePlayerConfiguration.isConfigured = () => false;
       sinon.restore();
     });
 
@@ -140,11 +141,31 @@
       });
     });
 
-    suite( "'start' event", () => {
-      test( "should start", () => {
-        element.dispatchEvent( new CustomEvent( "start" ) );
+    suite( "'start/play/stop' event", () => {
 
+      test( "should start", () => {
+        sinon.spy(element, "_handleStart");
+        element._init();
+        element.dispatchEvent( new CustomEvent( "start" ));
+
+        assert.isTrue( element._handleStart.calledOnce );
         assert.deepEqual( logger.log.getCall(0).args, ["info", "start received"] );
+      });
+
+      test( "should call _handleRisePresentationPlay", () => {
+        sinon.stub(element, "_handleRisePresentationPlay");
+        element._init();
+        element.dispatchEvent( new CustomEvent( "rise-presentation-play" ) );
+
+        assert.isTrue( element._handleRisePresentationPlay.calledOnce );
+      });
+
+      test( "should call _handleRisePresentationStop", () => {
+        sinon.stub(element, "_handleRisePresentationStop");
+        element._init();
+        element.dispatchEvent( new CustomEvent( "rise-presentation-stop" ) );
+
+        assert.isTrue( element._handleRisePresentationStop.calledOnce );
       });
     });
 

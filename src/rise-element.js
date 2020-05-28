@@ -43,6 +43,12 @@ export const RiseElementMixin = dedupingMixin( base => {
       static get EVENT_CLIENT_OFFLINE() {
         return "client-offline"
       }
+      static get EVENT_RISE_PRESENTATION_PLAY() {
+        return "rise-presentation-play"
+      }
+      static get EVENT_RISE_PRESENTATION_STOP() {
+        return "rise-presentation-stop"
+      }
 
       // General constants
       static get STORAGE_PREFIX() {
@@ -97,6 +103,8 @@ export const RiseElementMixin = dedupingMixin( base => {
 
       _init() {
         this.addEventListener( RiseElement.EVENT_START, this._handleStart, { once: true });
+        this.addEventListener( RiseElement.EVENT_RISE_PRESENTATION_PLAY, this._handleRisePresentationPlay );
+        this.addEventListener( RiseElement.EVENT_RISE_PRESENTATION_STOP, this._handleRisePresentationStop );
 
         this._sendEvent( RiseElement.EVENT_CONFIGURED );
       }
@@ -113,7 +121,14 @@ export const RiseElementMixin = dedupingMixin( base => {
         super.log( riseElement.LOG_TYPE_INFO, "start received" );
       }
 
+      _handleRisePresentationPlay() {
+      }
+
+      _handleRisePresentationStop() {
+      }
+
       _handleUptimeRequest() {
+
         window.dispatchEvent( new CustomEvent( "component-uptime-result", {
           detail: {
             component_id: this.id,
