@@ -24,17 +24,18 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _getCachedFile( fileUrl ) {
-      console.log( "fileUrl", fileUrl );
-      // TODO: Check file version and update it if needed functionality.
+      console.log( "I have got cached file!", fileUrl );
+      // TODO: Check file version and update it if needed and return it.
     }
 
     _checkInCache( fileUrl ) {
-      console.log( "fileUrl", fileUrl );
+      console.log( "fileUrl is cached", fileUrl );
+      return true;
       // TODO: Check file in cache
     }
 
     _requestFile( fileUrl ) {
-      console.log( "fileUrl", fileUrl );
+      console.log( "I have got requested file!", fileUrl );
       // TODO: fetch file
     }
 
