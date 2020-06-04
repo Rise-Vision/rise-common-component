@@ -35,8 +35,9 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _requestFile( fileUrl ) {
-      console.log( "I have got requested file!", fileUrl );
-      // TODO: fetch file
+      return fetch( fileUrl ).then( resp => {
+        super.putCache( resp, fileUrl )
+      })
     }
 
   }
