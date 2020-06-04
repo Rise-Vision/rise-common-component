@@ -14,6 +14,35 @@
   </head>
   <body>
     <script type="module">
+      import * as storeFilesModule from '../../src/store-files-mixin.js'
+
+      suite( "Store File", () => {
+        let storeFilesMixin;
+
+        setup(()=>{
+          let StoreFiles = storeFilesModule.StoreFilesMixin(class {});
+          storeFilesMixin = new StoreFiles();
+
+          sinon.stub()
+        })
+
+        teardown(()=>{
+          sinon.restore();
+        });
+
+        suite( "Fetch file", () => {
+          test( "Sends GET request and returns file", done => {
+
+          } )
+        })
+
+        suite( "Cache file", () => {
+
+
+        })
+
+      })
+
     </script>
   </body>
 </html>

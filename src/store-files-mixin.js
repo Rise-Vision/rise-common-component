@@ -3,10 +3,11 @@ import { CacheMixin } from "./cache-mixin.js";
 
 export const StoreFilesMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
-    name: "store-files-mixin",
-    refresh: 1000 * 60 * 60 * 2,
-    expiry: 1000 * 60 * 60 * 4
-  }
+      name: "store-files-mixin",
+      refresh: 1000 * 60 * 60 * 2,
+      expiry: 1000 * 60 * 60 * 4
+    },
+    host = "https://storage.googleapis.com";
 
   class StoreFiles extends CacheMixin( base ) {
     constructor() {
@@ -36,7 +37,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
     _requestFile( fileUrl ) {
       console.log( "REQUESTED FILE", fileUrl );
-      return fetch( fileUrl ).then( resp => {
+      return fetch( `${host}/${fileUrl}` ).then( resp => {
         super.putCache( resp, fileUrl )
       })
     }
