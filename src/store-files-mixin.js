@@ -30,11 +30,12 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
     _checkInCache( fileUrl ) {
       console.log( "fileUrl is cached", fileUrl );
-      return true;
+      return false;
       // TODO: Check file in cache
     }
 
     _requestFile( fileUrl ) {
+      console.log( "REQUESTED FILE", fileUrl );
       return fetch( fileUrl ).then( resp => {
         super.putCache( resp, fileUrl )
       })
