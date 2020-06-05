@@ -17,11 +17,12 @@
       import * as storeFilesModule from '../../src/store-files-mixin.js'
 
       suite( "store file", () => {
-        let storeFilesMixin, handleResponse;
+        let storeFilesMixin, cacheMixin, handleResponse;
 
         setup(()=>{
           let StoreFiles = storeFilesModule.StoreFilesMixin(class {});
           storeFilesMixin = new StoreFiles();
+          cacheMixin = storeFilesMixin.__proto__.__proto__;
 
           sinon.stub(window, "fetch");
 
@@ -41,7 +42,7 @@
             storeFilesMixin.getFile().then(() => {
               assert.isTrue(storeFilesMixin._handleCachedFile.called);
               done();
-            })
+            });
           });
 
           test( "should request the file if cache is unavailable", done => {
@@ -52,19 +53,36 @@
             storeFilesMixin.getFile().then(() => {
               assert.isTrue(storeFilesMixin._requestFile.called);
               done();
-            })
+            });
           });
         });
 
         suite( "_requestFile", () => {
+          const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
+          let response;
+
+          setup(()=>{
+            response = new Response(validXmlData,{headers:{date: new Date()}});
+            cacheMixin.putCache = sinon.stub().resolves();
+          });
+
           test( "should fetch file and return it if success", done => {
-            
             window.fetch.resolves();
 
             storeFilesMixin.getFile().then(() => {
+              assert.isTrue(window.fetch.called)
               done();
             })
-          })
+          });
+
+          test( "should cache response ", done => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._requestFile().then(() => {
+              assert.isTrue( cacheMixin.putCache.called );
+              done();
+            });
+          });
         });
       });
 
