@@ -17,11 +17,15 @@
       import * as storeFilesModule from '../../src/store-files-mixin.js'
 
       suite( "store file", () => {
-        let storeFilesMixin;
+        let storeFilesMixin, handleResponse;
 
         setup(()=>{
           let StoreFiles = storeFilesModule.StoreFilesMixin(class {});
           storeFilesMixin = new StoreFiles();
+
+          sinon.stub(window, "fetch");
+
+          handleResponse = sinon.stub();
         })
 
         teardown(()=>{
@@ -40,7 +44,7 @@
             })
           });
 
-          test( "should make fetch request if cache is unavailable", done => {
+          test( "should request the file if cache is unavailable", done => {
             sinon.stub(storeFilesMixin.__proto__, "_requestFile");
             let stubbedCache = sinon.stub(storeFilesMixin.__proto__.__proto__, "getCache");
             stubbedCache.resolves(Promise.reject());
@@ -50,8 +54,19 @@
               done();
             })
           });
-        })
-      })
+        });
+
+        suite( "_requestFile", () => {
+          test( "should fetch file and return it if success", done => {
+            
+            window.fetch.resolves();
+
+            storeFilesMixin.getFile().then(() => {
+              done();
+            })
+          })
+        });
+      });
 
     </script>
   </body>
