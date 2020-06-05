@@ -29,7 +29,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
     _requestFile( fileUrl ) {
       return fetch( fileUrl ).then( resp => {
-        super.putCache( resp );
+        super.putCache( resp, fileUrl );
         return resp;
       }).catch(() => {
         // TODO: handle errors
