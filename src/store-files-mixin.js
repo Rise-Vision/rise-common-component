@@ -3,11 +3,10 @@ import { CacheMixin } from "./cache-mixin.js";
 
 export const StoreFilesMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
-      name: "store-files-mixin",
-      refresh: 1000 * 60 * 60 * 2,
-      expiry: 1000 * 60 * 60 * 4
-    },
-    host = "https://storage.googleapis.com";
+    name: "store-files-mixin",
+    refresh: 1000 * 60 * 60 * 2,
+    expiry: 1000 * 60 * 60 * 4
+  }
 
   class StoreFiles extends CacheMixin( base ) {
     constructor() {
@@ -17,28 +16,24 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     getFile( fileUrl ) {
-      if ( this._checkInCache( fileUrl )) {
-        return this._getCachedFile( fileUrl );
-      } else {
+      return super.getCache( fileUrl ).then( resp => {
+        return this._handleCachedFile( resp );
+      }).catch(() => {
         return this._requestFile( fileUrl );
-      }
+      })
     }
 
-    _getCachedFile( fileUrl ) {
-      console.log( "I have got cached file!", fileUrl );
+    _handleCachedFile( resp ) {
+      console.log( "file is cached:", resp );
       // TODO: Check file version and update it if needed and return it.
     }
 
-    _checkInCache( fileUrl ) {
-      console.log( "fileUrl is cached", fileUrl );
-      return false;
-      // TODO: Check file in cache
-    }
-
     _requestFile( fileUrl ) {
-      console.log( "REQUESTED FILE", fileUrl );
-      return fetch( `${host}/${fileUrl}` ).then( resp => {
-        super.putCache( resp, fileUrl )
+      return fetch( fileUrl ).then( resp => {
+        console.log( "resp", resp );
+      }).catch( err => {
+        console.log( "handling error", err );
+        // TODO: handle errors
       })
     }
 

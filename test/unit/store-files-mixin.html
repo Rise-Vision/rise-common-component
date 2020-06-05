@@ -16,31 +16,41 @@
     <script type="module">
       import * as storeFilesModule from '../../src/store-files-mixin.js'
 
-      suite( "Store File", () => {
+      suite( "store file", () => {
         let storeFilesMixin;
 
         setup(()=>{
           let StoreFiles = storeFilesModule.StoreFilesMixin(class {});
           storeFilesMixin = new StoreFiles();
-
-          sinon.stub()
         })
 
         teardown(()=>{
           sinon.restore();
         });
 
-        suite( "Fetch file", () => {
-          test( "Sends GET request and returns file", done => {
+        suite( "get", () => {
+          test( "should call cache handler if cache is available and valid", done => {
+            sinon.stub(storeFilesMixin.__proto__, "_handleCachedFile");
+            let stubbedCache = sinon.stub(storeFilesMixin.__proto__.__proto__, "getCache");
+            stubbedCache.resolves(Promise.resolve());
 
-          } )
+            storeFilesMixin.getFile().then(() => {
+              assert.isTrue(storeFilesMixin._handleCachedFile.called);
+              done();
+            })
+          });
+
+          test( "should make fetch request if cache is unavailable", done => {
+            sinon.stub(storeFilesMixin.__proto__, "_requestFile");
+            let stubbedCache = sinon.stub(storeFilesMixin.__proto__.__proto__, "getCache");
+            stubbedCache.resolves(Promise.reject());
+
+            storeFilesMixin.getFile().then(() => {
+              assert.isTrue(storeFilesMixin._requestFile.called);
+              done();
+            })
+          });
         })
-
-        suite( "Cache file", () => {
-
-
-        })
-
       })
 
     </script>
