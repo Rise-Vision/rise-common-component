@@ -16,27 +16,23 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     getFile( fileUrl ) {
-      if ( this._checkInCache( fileUrl )) {
-        return this._getCachedFile( fileUrl );
-      } else {
+      return super.getCache( fileUrl ).then(() => {
+        return this._handleCachedFile();
+      }).catch(() => {
         return this._requestFile( fileUrl );
-      }
+      })
     }
 
-    _getCachedFile( fileUrl ) {
-      console.log( "I have got cached file!", fileUrl );
+    _handleCachedFile() {
       // TODO: Check file version and update it if needed and return it.
     }
 
-    _checkInCache( fileUrl ) {
-      console.log( "fileUrl is cached", fileUrl );
-      return true;
-      // TODO: Check file in cache
-    }
-
     _requestFile( fileUrl ) {
-      console.log( "I have got requested file!", fileUrl );
-      // TODO: fetch file
+      return fetch( fileUrl ).then( resp => {
+        return resp;
+      }).catch(() => {
+        // TODO: handle errors
+      })
     }
 
   }
