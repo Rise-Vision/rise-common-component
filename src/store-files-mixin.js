@@ -28,12 +28,23 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _requestFile( fileUrl ) {
-      return fetch( fileUrl ).then( resp => {
-        super.putCache( resp, fileUrl );
-        return resp;
-      }).catch(() => {
-        // TODO: handle errors
-      })
+      let response;
+
+      return fetch( fileUrl )
+        .then( resp => {
+          response = resp.clone();
+          return resp.blob();
+        })
+        .then( blob => {
+          return URL.createObjectURL( blob );
+        })
+        .then( objectURL => {
+          super.putCache( response );
+          return objectURL;
+        })
+        .catch(() => {
+          // TODO: handle errors
+        })
     }
 
   }
