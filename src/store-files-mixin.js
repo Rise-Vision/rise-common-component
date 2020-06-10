@@ -38,8 +38,9 @@ export const StoreFilesMixin = dedupingMixin( base => {
         .then( blob => {
           return URL.createObjectURL( blob );
         })
-        .then(() => {
+        .then( objectURL => {
           super.putCache( response );
+          return objectURL;
         })
         .catch(() => {
           // TODO: handle errors
