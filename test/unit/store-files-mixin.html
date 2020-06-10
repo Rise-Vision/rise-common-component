@@ -86,20 +86,11 @@
             });
           });
 
-          test( "should creat objectUrl ", done => {
-            window.fetch.resolves(response);
-
-            storeFilesMixin._requestFile().then(() => {
-              assert.isTrue( URL.createObjectURL.called );
-              done();
-            });
-          });
-
-
           test( "should cache response and creat objectUrl ", done => {
             window.fetch.resolves(response);
 
             storeFilesMixin._requestFile().then(() => {
+              assert.isTrue( URL.createObjectURL.called );
               assert.isTrue( cacheMixin.putCache.called );
               done();
             });
