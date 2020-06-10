@@ -64,9 +64,10 @@
           setup(()=>{
             response = new Response(validXmlData,{headers:{date: new Date()}});
             cacheMixin.putCache = sinon.stub().resolves();
+            URL.createObjectURL = sinon.stub();
           });
 
-          test( "should fetch file and return it if success", done => {
+          test( "should fetch file", done => {
             window.fetch.resolves();
 
             storeFilesMixin.getFile().then(() => {
@@ -74,8 +75,28 @@
               done();
             })
           });
+  
+          test( "should extract blob", done => {
+            window.fetch.resolves(response);
+            response.blob = sinon.stub();
 
-          test( "should cache response ", done => {
+            storeFilesMixin._requestFile().then(() => {
+              assert.isTrue( response.blob.called );
+              done();
+            });
+          });
+
+          test( "should creat objectUrl ", done => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._requestFile().then(() => {
+              assert.isTrue( URL.createObjectURL.called );
+              done();
+            });
+          });
+
+
+          test( "should cache response and creat objectUrl ", done => {
             window.fetch.resolves(response);
 
             storeFilesMixin._requestFile().then(() => {
