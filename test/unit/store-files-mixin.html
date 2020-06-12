@@ -36,7 +36,7 @@
         suite( "get", () => {
           test( "should call cache handler if cache is available and valid", done => {
             sinon.stub(storeFilesMixin.__proto__, "_handleCachedFile");
-            let stubbedCache = sinon.stub(storeFilesMixin.__proto__.__proto__, "getCache");
+            let stubbedCache = sinon.stub(storeFilesMixin, "_getCache");
             stubbedCache.resolves(Promise.resolve());
 
             storeFilesMixin.getFile().then(() => {

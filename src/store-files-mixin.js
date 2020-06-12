@@ -30,6 +30,16 @@ export const StoreFilesMixin = dedupingMixin( base => {
       this._saveMap( map );
     }
 
+    getTimestamp( fileUrl ) {
+      if ( !this._isSupported || !fileUrl ) {
+        return;
+      }
+
+      const map = this._getMap();
+
+      return map.get( fileUrl )
+    }
+
     _isLocalStorageSupported() {
       const test = "test";
 
@@ -72,34 +82,50 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     getFile( fileUrl ) {
-      return this._getCacheCustom( fileUrl ).then( cache => {
+      return this._getCache( fileUrl ).then( cache => {
         return this._handleCachedFile( fileUrl, cache );
       }).catch(() => {
         return this._requestFile( fileUrl );
       })
     }
 
-    _handleCachedFile( fileUrl, cache ) {
-      let respToCache;
+    _getCache( url ) {
+      return super._getCache().then( cache => {
+        return cache.match( url );
+      }).then( response => {
+        if ( response ) {
+          return Promise.resolve( response );
+        }
+        return Promise.reject();
+      }).catch(() => {
+        return Promise.reject();
+      })
+    }
 
-      return fetch( fileUrl )
-      // return fetch( fileUrl, {
-      //     headers: {
-      //       "If-Modified-Since": dateSinceModified
-      //     }
-      //   } )
+    _handleCachedFile( fileUrl, cache ) {
+      let dateSinceModified = this.lastRequestedStorage.getTimestamp( fileUrl ),
+        respToCache;
+
+      return fetch( fileUrl, {
+        headers: {
+          "If-Modified-Since": `${dateSinceModified}`
+        }
+      })
         .then( resp => {
           if ( resp.status === 200 ) {
             respToCache = resp.clone();
             super.putCache( respToCache );
-            this.lastRequestedStorage.save( fileUrl, Date.now());
+
+            let timestamp = new Date();
+
+            this.lastRequestedStorage.save( fileUrl, timestamp.toUTCString());
             return this._getFileRepresentation( resp );
           } else if ( resp.status === 304 ) {
             return this._getFileRepresentation( cache );
           }
         })
         .catch( err => {
-          console.error( "", err );
+          console.error( "Error:", err );
         })
     }
 
@@ -125,15 +151,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
         return URL.createObjectURL( blob );
       })
     }
-
-    _getCacheCustom( url ) {
-      return super._getCache().then( cache => {
-        return cache.match( this.getCacheRequestKey( url ));
-      }).then( response => {
-        return Promise.resolve( response );
-      })
-    }
-
   }
 
   return StoreFiles;
