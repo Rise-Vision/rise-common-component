@@ -92,6 +92,7 @@
             storeFilesMixin._requestFile().then(() => {
               assert.isTrue( URL.createObjectURL.called );
               assert.isTrue( cacheMixin.putCache.called );
+              assert.isTrue( URL.createObjectURL.called );
               done();
             });
           });
