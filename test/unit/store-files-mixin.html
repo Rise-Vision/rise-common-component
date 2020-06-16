@@ -36,7 +36,7 @@
         suite( "get", () => {
           test( "should call cache handler if cache is available and valid", done => {
             sinon.stub(storeFilesMixin.__proto__, "_handleCachedFile");
-            let stubbedCache = sinon.stub(storeFilesMixin.__proto__.__proto__, "getCache");
+            let stubbedCache = sinon.stub(storeFilesMixin, "_getCache");
             stubbedCache.resolves(Promise.resolve());
 
             storeFilesMixin.getFile().then(() => {
@@ -75,7 +75,7 @@
               done();
             })
           });
-  
+
           test( "should extract blob", done => {
             window.fetch.resolves(response);
             response.blob = sinon.stub();
@@ -90,10 +90,89 @@
             window.fetch.resolves(response);
 
             storeFilesMixin._requestFile().then(() => {
+              assert.isTrue( URL.createObjectURL.called );
               assert.isTrue( cacheMixin.putCache.called );
               assert.isTrue( URL.createObjectURL.called );
               done();
             });
+          });
+        });
+
+        suite( "_handleCachedFile", () => {
+          const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
+          let response;
+
+          setup(() => {
+            response = new Response(validXmlData,{headers:{date: new Date()}});
+            cacheMixin.putCache = sinon.stub().resolves();
+            URL.createObjectURL = sinon.stub();
+          });
+
+          suite( "response 200", () => {
+            test( "should update cached file", done => {
+              response.blob = sinon.stub().resolves();
+              window.fetch.resolves(response);
+
+              storeFilesMixin._handleCachedFile("file url").then(() => {
+                assert.isTrue( cacheMixin.putCache.called );
+                done();
+              });
+            });
+
+            test( "should return file representation", done => {
+              window.fetch.resolves(response);
+
+              storeFilesMixin._handleCachedFile("file url").then((res) => {
+                assert.isTrue( URL.createObjectURL.called );
+                done();
+              });
+            });
+          });
+
+          suite( "response 304", () => {
+            let cachedResponse;
+
+            setup(() => {
+              cachedResponse = new Response(validXmlData, {
+                headers: {date: new Date()}
+              });
+
+              response = new Response(null, {
+                status: 304,
+                headers: {date: new Date()}
+              });
+            });
+
+            test( "should return cached file representation", done => {
+              response.blob = sinon.stub().resolves();
+              storeFilesMixin._getFileRepresentation = sinon.stub().resolves();
+              window.fetch.resolves(response);
+
+              storeFilesMixin._handleCachedFile("file url", cachedResponse).then((res) => {
+                assert.isTrue( storeFilesMixin._getFileRepresentation.calledWith( cachedResponse ) );
+                done();
+              });
+            });
+          });
+        });
+
+        suite( "_getFileRepresentation", () => {
+          const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
+          let response;
+
+          setup(() => {
+            response = new Response(validXmlData,{headers:{date: new Date()}});
+            URL.createObjectURL = sinon.stub();
+          });
+
+          test( "should return file representation", done => {
+              response.blob = sinon.stub().resolves( "BLOB" );
+
+              storeFilesMixin._getFileRepresentation( response ).then(() => {
+                assert.isTrue( response.blob.called );
+                assert.isTrue( URL.createObjectURL.calledWith( "BLOB" ) );
+                done();
+              });
           });
         });
       });
