@@ -243,8 +243,8 @@
         cache._caches = _caches;
       });
 
-      test("should reject _getCache if _caches is not available", done => {
-        cache._getCache().catch(() => {
+      test("should reject _getCacheStorage if _caches is not available", done => {
+        cache._getCacheStorage().catch(() => {
           assert.isTrue( true );
 
           done();

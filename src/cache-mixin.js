@@ -112,7 +112,7 @@ export const CacheMixin = dedupingMixin( base => {
       this._deleteExpiredCache();
     }
 
-    _getCache() {
+    _getCacheStorage() {
       if ( this._caches ) {
         if ( !( window.caches && window.caches.open )) {
           super.log( Cache.LOG_TYPE_WARNING, "cache API not available", {}, Cache.LOG_AT_MOST_ONCE_PER_DAY );
@@ -138,7 +138,7 @@ export const CacheMixin = dedupingMixin( base => {
 
     _deleteExpiredCache() {
       if ( this._caches ) {
-        this._getCache().then( cache => {
+        this._getCacheStorage().then( cache => {
           return cache.keys().then( keys => {
             keys.forEach( key => {
               cache.match( key ).then( response => {
@@ -167,7 +167,7 @@ export const CacheMixin = dedupingMixin( base => {
 
     putCache( response, url ) {
       if ( this._caches ) {
-        return this._getCache().then( cache => {
+        return this._getCacheStorage().then( cache => {
           return cache.put( this.getCacheResponseKey( response ) || url, response );
         }).catch( err => {
           super.log( Cache.LOG_TYPE_WARNING, "cache put failed", { url: response.url || url, err }, Cache.LOG_AT_MOST_ONCE_PER_DAY );
@@ -181,7 +181,7 @@ export const CacheMixin = dedupingMixin( base => {
       if ( this._caches ) {
         let _cache;
 
-        return this._getCache().then( cache => {
+        return this._getCacheStorage().then( cache => {
           _cache = cache;
           return cache.match( this.getCacheRequestKey( url ));
         }).then( response => {

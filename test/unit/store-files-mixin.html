@@ -170,29 +170,6 @@
               });
             });
           });
-
-          suite( "error handler", () => {
-            let cacheStub = {
-              delete: sinon.stub(window.caches, 'delete'),
-            };
-
-            setup(() => {
-              cacheMixin._getCache = sinon.stub().resolves(cacheStub);
-            });
-
-            teardown(()=>{
-              sinon.restore();
-            });
-
-            test( "in case of request error it should clear the cache", done => {
-              window.fetch.rejects();
-
-              storeFilesMixin._handleCachedFile("file url").then((res) => {
-                assert.isTrue( cacheStub.delete.calledWith("file url") );
-                done();
-              });
-            })
-          });
         });
 
         suite( "_getFileRepresentation", () => {

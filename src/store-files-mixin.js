@@ -90,7 +90,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _getCacheCustom( url ) {
-      return super._getCache().then( cache => {
+      return super._getCacheStorage().then( cache => {
         return cache.match( url );
       }).then( response => {
         if ( response ) {
@@ -125,10 +125,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
           }
         })
         .catch( err => {
-          super._getCache().then( cachedData => {
-            cachedData.delete( fileUrl );
-            super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to update file", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY )
-          })
+          console.error( "Error:", err );
         })
     }
 
@@ -145,7 +142,8 @@ export const StoreFilesMixin = dedupingMixin( base => {
           return objectURL;
         })
         .catch( err => {
-          super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to get file from storage", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY )
+          super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to get file from storage", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+          Promise.reject( err );
         })
     }
 
