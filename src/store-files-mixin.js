@@ -90,7 +90,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _getCacheCustom( url ) {
-      return super._getCacheStorage().then( cache => {
+      return super.getCacheByName().then( cache => {
         return cache.match( url );
       }).then( response => {
         if ( response ) {
