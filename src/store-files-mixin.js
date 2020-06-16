@@ -83,8 +83,10 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
     getFile( fileUrl ) {
       return this._getCacheCustom( fileUrl ).then( cache => {
+        console.log( "CACHED" );
         return this._handleCachedFile( fileUrl, cache );
       }).catch(() => {
+        console.log( "REQUESTED" );
         return this._requestFile( fileUrl );
       })
     }
@@ -103,29 +105,32 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _handleCachedFile( fileUrl, cache ) {
-      let dateSinceModified = this.lastRequestedStorage.getTimestamp( fileUrl ),
-        respToCache;
+      let respToCache,
+        etag = cache.headers.get( "etag" );
 
+      console.log( "etag", cache, etag );
       return fetch( fileUrl, {
         headers: {
-          "If-Modified-Since": `${dateSinceModified}`
+          "If-None-Match": `${etag}`
         }
       })
         .then( resp => {
+          console.error( "check resp:", resp );
+
           if ( resp.status === 200 ) {
+            console.log( "200", resp );
             respToCache = resp.clone();
             super.putCache( respToCache );
 
-            let timestamp = new Date();
-
-            this.lastRequestedStorage.save( fileUrl, timestamp.toUTCString());
             return this._getFileRepresentation( resp );
           } else if ( resp.status === 304 ) {
+            console.log( "304", resp );
+
             return this._getFileRepresentation( cache );
           }
         })
         .catch( err => {
-          console.error( "Error:", err );
+          console.error( "Error :", err );
         })
     }
 
@@ -134,6 +139,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
       return fetch( fileUrl )
         .then( resp => {
+          console.log( "THIS IS WHAT I VE GOT", resp );
           respToCache = resp.clone();
           return this._getFileRepresentation( resp );
         })
