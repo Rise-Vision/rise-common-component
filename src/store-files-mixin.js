@@ -19,7 +19,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
         return;
       }
 
-      if ( !fileUrl || !timestamp || typeof timestamp !== "number" ) {
+      if ( !fileUrl || !timestamp ) {
         return;
       }
 
