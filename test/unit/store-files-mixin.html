@@ -82,17 +82,17 @@
           test( "should fetch file", done => {
             window.fetch.resolves();
 
-            storeFilesMixin.getFile().then(() => {
+            storeFilesMixin.getFile().finally(() => {
               assert.isTrue(window.fetch.called)
               done();
-            })
+            });
           });
 
           test( "should extract blob", done => {
             window.fetch.resolves(response);
             response.blob = sinon.stub();
 
-            storeFilesMixin._requestFile().then(() => {
+            storeFilesMixin._requestFile().finally(() => {
               assert.isTrue( response.blob.called );
               done();
             });
@@ -106,6 +106,25 @@
               assert.isTrue( cacheMixin.putCache.called );
               assert.isTrue( URL.createObjectURL.called );
               done();
+            });
+          });
+
+          suite( "error handler", () => {
+            setup(() => {
+              storeFilesMixin.__proto__.__proto__.log = sinon.stub();
+            })
+
+            teardown(() => {
+              sinon.restore();
+            });
+
+            test( "should log error message", done => {
+              window.fetch.rejects();
+
+              storeFilesMixin._requestFile().then(() => {
+                assert.isTrue( storeFilesMixin.log.called );
+                done();
+              });
             });
           });
         });

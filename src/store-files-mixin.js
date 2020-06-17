@@ -143,7 +143,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
         })
         .catch( err => {
           super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to get file from storage", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
-          Promise.reject( err );
+          return err;
         })
     }
 
