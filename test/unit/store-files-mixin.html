@@ -125,7 +125,7 @@
                 assert.isTrue( storeFilesMixin.log.calledWith(
                   "error",
                   "Failed to get file from storage",
-                  sinon.match({ url: "file url", err })
+                  { url: "file url", err }
                 ) );
                 done();
               });
