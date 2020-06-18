@@ -13,11 +13,20 @@
     <script src="../../node_modules/sinon/pkg/sinon.js"></script>
   </head>
   <body>
+    <script type="text/javascript">
+      RisePlayerConfiguration = {
+        Logger: {
+          info: () => {},
+          warning: () => {},
+          error: () => {}
+        }
+      };
+    </script>
     <script type="module">
       import * as storeFilesModule from '../../src/store-files-mixin.js'
 
       suite( "store file", () => {
-        let storeFilesMixin, cacheMixin, handleResponse;
+        let storeFilesMixin, cacheMixin, handleResponse, logger;
 
         setup(()=>{
           let StoreFiles = storeFilesModule.StoreFilesMixin(class {});
@@ -25,6 +34,9 @@
           cacheMixin = storeFilesMixin.__proto__.__proto__;
 
           sinon.stub(window, "fetch");
+
+          logger = storeFilesMixin.__proto__.__proto__;
+          sinon.stub(logger, "log");
 
           handleResponse = sinon.stub();
         })
@@ -36,7 +48,7 @@
         suite( "get", () => {
           test( "should call cache handler if cache is available and valid", done => {
             sinon.stub(storeFilesMixin.__proto__, "_handleCachedFile");
-            let stubbedCache = sinon.stub(storeFilesMixin, "_getCache");
+            let stubbedCache = sinon.stub(storeFilesMixin, "_getCacheCustom");
             stubbedCache.resolves(Promise.resolve());
 
             storeFilesMixin.getFile().then(() => {
@@ -70,17 +82,17 @@
           test( "should fetch file", done => {
             window.fetch.resolves();
 
-            storeFilesMixin.getFile().then(() => {
+            storeFilesMixin.getFile().finally(() => {
               assert.isTrue(window.fetch.called)
               done();
-            })
+            });
           });
 
           test( "should extract blob", done => {
             window.fetch.resolves(response);
             response.blob = sinon.stub();
 
-            storeFilesMixin._requestFile().then(() => {
+            storeFilesMixin._requestFile().finally(() => {
               assert.isTrue( response.blob.called );
               done();
             });
@@ -96,6 +108,29 @@
               done();
             });
           });
+
+          suite( "error handler", () => {
+            setup(() => {
+              storeFilesMixin.__proto__.__proto__.log = sinon.stub();
+            })
+
+            teardown(() => {
+              sinon.restore();
+            });
+
+            test( "should log error message", done => {
+              window.fetch.rejects();
+
+              storeFilesMixin._requestFile( "file url" ).then((err) => {
+                assert.isTrue( storeFilesMixin.log.calledWith(
+                  "error",
+                  "Failed to get file from storage",
+                  { url: "file url", err }
+                ) );
+                done();
+              });
+            });
+          });
         });
 
         suite( "_handleCachedFile", () => {
@@ -106,6 +141,10 @@
             response = new Response(validXmlData,{headers:{date: new Date()}});
             cacheMixin.putCache = sinon.stub().resolves();
             URL.createObjectURL = sinon.stub();
+          });
+
+          teardown(()=>{
+            sinon.restore();
           });
 
           suite( "response 200", () => {
