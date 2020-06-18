@@ -19,7 +19,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
         return;
       }
 
-      if ( !fileUrl || !timestamp || typeof timestamp !== "number" ) {
+      if ( !fileUrl || !timestamp ) {
         return;
       }
 
@@ -135,6 +135,11 @@ export const StoreFilesMixin = dedupingMixin( base => {
       return fetch( fileUrl )
         .then( resp => {
           respToCache = resp.clone();
+
+          let timestamp = new Date();
+
+          this.lastRequestedStorage.save( fileUrl, timestamp.toUTCString());
+
           return this._getFileRepresentation( resp );
         })
         .then( objectURL => {

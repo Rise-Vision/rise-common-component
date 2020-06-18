@@ -117,9 +117,6 @@
 
         lastRequestedStorage.save("test");
         assert.isFalse(lastRequestedStorage._getMap.called);
-
-        lastRequestedStorage.save("test", "test");
-        assert.isFalse(lastRequestedStorage._getMap.called);
       });
 
       test("should save new item of last requested data to Local Storage", () => {
