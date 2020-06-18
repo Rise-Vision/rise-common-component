@@ -121,8 +121,12 @@
             test( "should log error message", done => {
               window.fetch.rejects();
 
-              storeFilesMixin._requestFile().then(() => {
-                assert.isTrue( storeFilesMixin.log.called );
+              storeFilesMixin._requestFile( "file url" ).then((err) => {
+                assert.isTrue( storeFilesMixin.log.calledWith(
+                  "error",
+                  "Failed to get file from storage",
+                  sinon.match({ url: "file url", err })
+                ) );
                 done();
               });
             });
