@@ -37,26 +37,30 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _handleCachedFile( fileUrl, cache ) {
-      let respToCache,
-        etag = cache.headers.get( "etag" );
-
+      // let respToCache,
+      //   etag = cache.headers.get( "etag" );
+      console.log( "cache", cache );
       return fetch( fileUrl, {
-        headers: {
-          "If-None-Match": `${etag}`
-        }
+        method: "HEAD"
       })
-        .then( resp => {
-          if ( resp.status === 200 ) {
-            respToCache = resp.clone();
-            super.putCache( respToCache );
-            return this._getFileRepresentation( resp );
-          } else if ( resp.status === 304 ) {
-            return this._getFileRepresentation( cache );
-          }
-        })
-        .catch( err => {
-          console.error( "Error :", err );
-        })
+
+      // return fetch( fileUrl, {
+      //   headers: {
+      //     "If-None-Match": `${etag}`
+      //   }
+      // })
+      //   .then( resp => {
+      //     if ( resp.status === 200 ) {
+      //       respToCache = resp.clone();
+      //       super.putCache( respToCache );
+      //       return this._getFileRepresentation( resp );
+      //     } else if ( resp.status === 304 ) {
+      //       return this._getFileRepresentation( cache );
+      //     }
+      //   })
+      //   .catch( err => {
+      //     console.error( "Error :", err );
+      //   })
     }
 
     _requestFile( fileUrl ) {
