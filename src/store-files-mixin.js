@@ -65,6 +65,11 @@ export const StoreFilesMixin = dedupingMixin( base => {
       return fetch( fileUrl )
         .then( resp => {
           respToCache = resp.clone();
+
+          let timestamp = new Date();
+
+          this.lastRequestedStorage.save( fileUrl, timestamp.toUTCString());
+
           return this._getFileRepresentation( resp );
         })
         .then( objectURL => {
@@ -73,7 +78,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
         })
         .catch( err => {
           super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to get file from storage", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
-          Promise.reject( err );
+          return err;
         })
     }
 
