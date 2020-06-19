@@ -89,6 +89,10 @@
           });
 
           test( "should extract blob", done => {
+            sinon.stub(response, "clone");
+            storeFilesMixin.lastRequestedStorage = {
+              save: sinon.stub(),
+            };
             window.fetch.resolves(response);
             response.blob = sinon.stub();
 
@@ -99,6 +103,10 @@
           });
 
           test( "should cache response and creat objectUrl ", done => {
+            sinon.stub(response, "clone");
+            storeFilesMixin.lastRequestedStorage = {
+              save: sinon.stub(),
+            };
             window.fetch.resolves(response);
 
             storeFilesMixin._requestFile().then(() => {
@@ -129,7 +137,7 @@
               response.blob = sinon.stub().resolves();
               window.fetch.resolves(response);
 
-              storeFilesMixin._handleCachedFile("file url").then(() => {
+              storeFilesMixin._handleCachedFile("file url", response).then(() => {
                 assert.isTrue( cacheMixin.putCache.called );
                 done();
               });
@@ -138,7 +146,7 @@
             test( "should return file representation", done => {
               window.fetch.resolves(response);
 
-              storeFilesMixin._handleCachedFile("file url").then((res) => {
+              storeFilesMixin._handleCachedFile("file url", response).then((res) => {
                 assert.isTrue( URL.createObjectURL.called );
                 done();
               });
