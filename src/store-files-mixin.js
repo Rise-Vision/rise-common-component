@@ -37,30 +37,34 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _handleCachedFile( fileUrl, cache ) {
-      // let respToCache,
-      //   etag = cache.headers.get( "etag" );
-      console.log( "cache", cache );
+      let respToCache;
+
+      if (this._isCachedFileRelevant( fileUrl, cache )) {
+        return this._getFileRepresentation( cache );
+      } else {
+        return fetch( fileUrl ).then( resp => {
+          respToCache = resp.clone();
+          super.putCache( respToCache );
+          return this._getFileRepresentation( resp );
+        }).catch( err => {
+          console.error( "Error :", err );
+        })
+      }
+    }
+
+    _isCachedFileRelevant( fileUrl, cache ) {
       return fetch( fileUrl, {
         method: "HEAD"
-      })
-
-      // return fetch( fileUrl, {
-      //   headers: {
-      //     "If-None-Match": `${etag}`
-      //   }
-      // })
-      //   .then( resp => {
-      //     if ( resp.status === 200 ) {
-      //       respToCache = resp.clone();
-      //       super.putCache( respToCache );
-      //       return this._getFileRepresentation( resp );
-      //     } else if ( resp.status === 304 ) {
-      //       return this._getFileRepresentation( cache );
-      //     }
-      //   })
-      //   .catch( err => {
-      //     console.error( "Error :", err );
-      //   })
+      }).then( resp => {
+        if ( cache.headers.get( "etag" ) === resp.headers.get( "etag" )) {
+          return true;
+        } else {
+          return false;
+        }
+      }).catch( err => {
+        super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to chack file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+        return true;
+      });
     }
 
     _requestFile( fileUrl ) {
@@ -69,10 +73,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
       return fetch( fileUrl )
         .then( resp => {
           respToCache = resp.clone();
-
-          let timestamp = new Date();
-
-          this.lastRequestedStorage.save( fileUrl, timestamp.toUTCString());
 
           return this._getFileRepresentation( resp );
         })
