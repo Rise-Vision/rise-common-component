@@ -82,23 +82,31 @@
           test( "should fetch file", done => {
             window.fetch.resolves();
 
-            storeFilesMixin.getFile().finally(() => {
+            storeFilesMixin.getFile().then(() => {
               assert.isTrue(window.fetch.called)
               done();
-            });
+            })
           });
 
           test( "should extract blob", done => {
+            sinon.stub(response, "clone");
+            storeFilesMixin.lastRequestedStorage = {
+              save: sinon.stub(),
+            };
             window.fetch.resolves(response);
             response.blob = sinon.stub();
 
-            storeFilesMixin._requestFile().finally(() => {
+            storeFilesMixin._requestFile().then(() => {
               assert.isTrue( response.blob.called );
               done();
             });
           });
 
           test( "should cache response and creat objectUrl ", done => {
+            sinon.stub(response, "clone");
+            storeFilesMixin.lastRequestedStorage = {
+              save: sinon.stub(),
+            };
             window.fetch.resolves(response);
 
             storeFilesMixin._requestFile().then(() => {
@@ -106,29 +114,6 @@
               assert.isTrue( cacheMixin.putCache.called );
               assert.isTrue( URL.createObjectURL.called );
               done();
-            });
-          });
-
-          suite( "error handler", () => {
-            setup(() => {
-              storeFilesMixin.__proto__.__proto__.log = sinon.stub();
-            })
-
-            teardown(() => {
-              sinon.restore();
-            });
-
-            test( "should log error message", done => {
-              window.fetch.rejects();
-
-              storeFilesMixin._requestFile( "file url" ).then((err) => {
-                assert.isTrue( storeFilesMixin.log.calledWith(
-                  "error",
-                  "Failed to get file from storage",
-                  { url: "file url", err }
-                ) );
-                done();
-              });
             });
           });
         });
@@ -148,22 +133,43 @@
           });
 
           suite( "response 200", () => {
-            test( "should update cached file", done => {
-              response.blob = sinon.stub().resolves();
-              window.fetch.resolves(response);
+            suite( "cached file not relevant", () => {
+              setup(() => {
+                storeFilesMixin._isCachedFileRelevant = sinon.stub().returns(false);
+              });
 
-              storeFilesMixin._handleCachedFile("file url").then(() => {
-                assert.isTrue( cacheMixin.putCache.called );
-                done();
+              test( "should update cached file", done => {
+                response.blob = sinon.stub().resolves();
+                window.fetch.resolves(response);
+
+                storeFilesMixin._handleCachedFile("file url", response).then(() => {
+                  assert.isTrue( cacheMixin.putCache.called );
+                  done();
+                });
+              });
+
+              test( "should return file representation", done => {
+                window.fetch.resolves(response);
+
+                storeFilesMixin._handleCachedFile("file url", response).then((res) => {
+                  assert.isTrue( URL.createObjectURL.called );
+                  done();
+                });
               });
             });
 
-            test( "should return file representation", done => {
-              window.fetch.resolves(response);
+            suite( "cached file relevant", () => {
+              setup(() => {
+                storeFilesMixin._isCachedFileRelevant = sinon.stub().returns(true);
+              });
 
-              storeFilesMixin._handleCachedFile("file url").then((res) => {
-                assert.isTrue( URL.createObjectURL.called );
-                done();
+              test( "should return file representation", done => {
+                window.fetch.resolves(response);
+
+                storeFilesMixin._handleCachedFile("file url", response).then((res) => {
+                  assert.isTrue( URL.createObjectURL.called );
+                  done();
+                });
               });
             });
           });
@@ -191,6 +197,60 @@
                 assert.isTrue( storeFilesMixin._getFileRepresentation.calledWith( cachedResponse ) );
                 done();
               });
+            });
+          });
+        });
+
+        suite( "_isCachedFileRelevant", () => {
+          let response;
+          let cachedResponse;
+
+          setup(() => {
+            response = new Response(null, {
+              headers: { etag: "true" }
+            });
+
+            cachedResponse = new Response(null, {
+              headers: { etag: "false" }
+            });
+          });
+
+          test( "should return true if cache is relevant", (done) => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._isCachedFileRelevant( "url", response ).then((res) => {
+              assert.isTrue(res);
+              done();
+            });
+          });
+
+          test( "should return false if cache is not relevant", (done) => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
+              assert.isFalse(res);
+              done();
+            });
+          });
+
+          test( "should return true with rejection", (done) => {
+            window.fetch.rejects();
+
+            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res);
+              done();
+            });
+          });
+
+          test( "should log an error on reject", (done) => {
+            window.fetch.rejects();
+
+            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then(() => {
+              assert.isTrue( storeFilesMixin.log.calledWith(
+                "error",
+                "Failed to chack file relevancy",
+              ) );
+              done();
             });
           });
         });

@@ -3,81 +3,15 @@ import { CacheMixin } from "./cache-mixin.js";
 
 export const StoreFilesMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
-      name: "store-files-mixin",
-      refresh: 1000 * 60 * 60 * 2,
-      expiry: 1000 * 60 * 60 * 4
-    },
-    LOCAL_STORAGE_KEY = "rise_files_last_requested";
-
-  class LastRequestedStorage {
-    constructor() {
-      this._isSupported = this._isLocalStorageSupported();
-    }
-
-    save( fileUrl, timestamp ) {
-      if ( !this._isSupported ) {
-        return;
-      }
-
-      if ( !fileUrl || !timestamp ) {
-        return;
-      }
-
-      const map = this._getMap();
-
-      map.set( fileUrl, timestamp );
-
-      this._saveMap( map );
-    }
-
-    getTimestamp( fileUrl ) {
-      if ( !this._isSupported || !fileUrl ) {
-        return;
-      }
-
-      const map = this._getMap();
-
-      return map.get( fileUrl )
-    }
-
-    _isLocalStorageSupported() {
-      const test = "test";
-
-      try {
-        localStorage.setItem( test, test );
-        localStorage.removeItem( test );
-        return true;
-      } catch ( e ) {
-        return false;
-      }
-    }
-
-    _getMap() {
-      let map;
-
-      try {
-        map = new Map( JSON.parse( localStorage.getItem( LOCAL_STORAGE_KEY )));
-      } catch ( e ) {
-        console.warn( e ); // eslint-disable-line no-console
-        map = new Map();
-      }
-      return map;
-    }
-
-    _saveMap( map ) {
-      if ( !map || !( map instanceof Map )) {
-        return;
-      }
-
-      localStorage.setItem( LOCAL_STORAGE_KEY, JSON.stringify( Array.from( map )));
-    }
-  }
+    name: "store-files-mixin",
+    refresh: 1000 * 60 * 60 * 2,
+    expiry: 1000 * 60 * 60 * 4
+  };
 
   class StoreFiles extends CacheMixin( base ) {
     constructor() {
       super();
 
-      this.lastRequestedStorage = new LastRequestedStorage();
       this.cacheConfig = Object.assign({}, CACHE_CONFIG );
     }
 
@@ -103,30 +37,26 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _handleCachedFile( fileUrl, cache ) {
-      let dateSinceModified = this.lastRequestedStorage.getTimestamp( fileUrl ),
-        respToCache;
+      if ( this._isCachedFileRelevant( fileUrl, cache )) {
+        return this._getFileRepresentation( cache );
+      } else {
+        return this._requestFile( fileUrl )
+      }
+    }
 
+    _isCachedFileRelevant( fileUrl, cache ) {
       return fetch( fileUrl, {
-        headers: {
-          "If-Modified-Since": `${dateSinceModified}`
+        method: "HEAD"
+      }).then( resp => {
+        if ( cache.headers.get( "etag" ) === resp.headers.get( "etag" )) {
+          return true;
+        } else {
+          return false;
         }
-      })
-        .then( resp => {
-          if ( resp.status === 200 ) {
-            respToCache = resp.clone();
-            super.putCache( respToCache );
-
-            let timestamp = new Date();
-
-            this.lastRequestedStorage.save( fileUrl, timestamp.toUTCString());
-            return this._getFileRepresentation( resp );
-          } else if ( resp.status === 304 ) {
-            return this._getFileRepresentation( cache );
-          }
-        })
-        .catch( err => {
-          console.error( "Error:", err );
-        })
+      }).catch( err => {
+        super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to chack file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+        return true;
+      });
     }
 
     _requestFile( fileUrl ) {
@@ -135,10 +65,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
       return fetch( fileUrl )
         .then( resp => {
           respToCache = resp.clone();
-
-          let timestamp = new Date();
-
-          this.lastRequestedStorage.save( fileUrl, timestamp.toUTCString());
 
           return this._getFileRepresentation( resp );
         })
