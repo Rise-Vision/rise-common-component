@@ -201,6 +201,60 @@
           });
         });
 
+        suite( "_isCachedFileRelevant", () => {
+          let response;
+          let cachedResponse;
+
+          setup(() => {
+            response = new Response(null, {
+              headers: { etag: "true" }
+            });
+
+            cachedResponse = new Response(null, {
+              headers: { etag: "false" }
+            });
+          });
+
+          test( "should return true if cache is relevant", (done) => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._isCachedFileRelevant( "url", response ).then((res) => {
+              assert.isTrue(res);
+              done();
+            });
+          });
+
+          test( "should return false if cache is not relevant", (done) => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
+              assert.isFalse(res);
+              done();
+            });
+          });
+
+          test( "should return true with rejection", (done) => {
+            window.fetch.rejects();
+
+            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res);
+              done();
+            });
+          });
+
+          test( "should log an error on reject", (done) => {
+            window.fetch.rejects();
+
+            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then(() => {
+              assert.isTrue( storeFilesMixin.log.calledWith(
+                "error",
+                "Failed to chack file relevancy",
+              ) );
+              done();
+            });
+          });
+        });
+
         suite( "_getFileRepresentation", () => {
           const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
           let response;

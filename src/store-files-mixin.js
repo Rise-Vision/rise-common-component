@@ -37,18 +37,10 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _handleCachedFile( fileUrl, cache ) {
-      let respToCache;
-
       if ( this._isCachedFileRelevant( fileUrl, cache )) {
         return this._getFileRepresentation( cache );
       } else {
-        return fetch( fileUrl ).then( resp => {
-          respToCache = resp.clone();
-          super.putCache( respToCache );
-          return this._getFileRepresentation( resp );
-        }).catch( err => {
-          console.error( "Error :", err );
-        })
+        return this._requestFile( fileUrl )
       }
     }
 
