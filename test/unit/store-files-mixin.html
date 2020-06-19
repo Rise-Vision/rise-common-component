@@ -133,22 +133,43 @@
           });
 
           suite( "response 200", () => {
-            test( "should update cached file", done => {
-              response.blob = sinon.stub().resolves();
-              window.fetch.resolves(response);
+            suite( "cached file not relevant", () => {
+              setup(() => {
+                storeFilesMixin._isCachedFileRelevant = sinon.stub().returns(false);
+              });
 
-              storeFilesMixin._handleCachedFile("file url", response).then(() => {
-                assert.isTrue( cacheMixin.putCache.called );
-                done();
+              test( "should update cached file", done => {
+                response.blob = sinon.stub().resolves();
+                window.fetch.resolves(response);
+
+                storeFilesMixin._handleCachedFile("file url", response).then(() => {
+                  assert.isTrue( cacheMixin.putCache.called );
+                  done();
+                });
+              });
+
+              test( "should return file representation", done => {
+                window.fetch.resolves(response);
+
+                storeFilesMixin._handleCachedFile("file url", response).then((res) => {
+                  assert.isTrue( URL.createObjectURL.called );
+                  done();
+                });
               });
             });
 
-            test( "should return file representation", done => {
-              window.fetch.resolves(response);
+            suite( "cached file relevant", () => {
+              setup(() => {
+                storeFilesMixin._isCachedFileRelevant = sinon.stub().returns(true);
+              });
 
-              storeFilesMixin._handleCachedFile("file url", response).then((res) => {
-                assert.isTrue( URL.createObjectURL.called );
-                done();
+              test( "should return file representation", done => {
+                window.fetch.resolves(response);
+
+                storeFilesMixin._handleCachedFile("file url", response).then((res) => {
+                  assert.isTrue( URL.createObjectURL.called );
+                  done();
+                });
               });
             });
           });
