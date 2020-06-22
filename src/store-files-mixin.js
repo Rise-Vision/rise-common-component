@@ -44,11 +44,18 @@ export const StoreFilesMixin = dedupingMixin( base => {
       }
     }
 
-    _isCachedFileRelevant( fileUrl, cache ) {
+    _isCachedFileRelevant( fileUrl, cachedResponse ) {
       return fetch( fileUrl, {
         method: "HEAD"
       }).then( resp => {
-        if ( cache.headers.get( "etag" ) === resp.headers.get( "etag" )) {
+        if ( resp.status === "404" ) {
+          return super.getCacheByName().then( cache => {
+            return cache.delete( fileUrl ).then(() => {
+              return false;
+            })
+          })
+        }
+        if ( cachedResponse.headers.get( "etag" ) === resp.headers.get( "etag" )) {
           return true;
         } else {
           return false;
