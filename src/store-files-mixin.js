@@ -48,7 +48,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
       return fetch( fileUrl, {
         method: "HEAD"
       }).then( resp => {
-        if ( resp.status === "404" ) {
+        if ( resp.status === 404 ) {
           return super.getCacheByName().then( cache => {
             return cache.delete( fileUrl ).then(() => {
               return false;
