@@ -3,11 +3,16 @@ import { CacheMixin } from "./cache-mixin.js";
 
 export const StoreFilesMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
-    name: "store-files-mixin",
-    refresh: 1000 * 60 * 60 * 2,
-    expiry: 1000 * 60 * 60 * 4
-  };
-  let isFileDeleted = false;
+      name: "store-files-mixin",
+      refresh: 1000 * 60 * 60 * 2,
+      expiry: 1000 * 60 * 60 * 4
+    },
+    deletedFileStatusCodes = [ 401, 403, 404 ],
+    fileStatuses = {
+      fresh: "fresh",
+      stale: "stale",
+      deleted: "deleted"
+    };
 
   class StoreFiles extends CacheMixin( base ) {
     constructor() {
@@ -39,34 +44,32 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
     _handleCachedFile( fileUrl, cache ) {
       return this._isCachedFileRelevant( fileUrl, cache ).then( isCacheRelevant => {
-        if ( isCacheRelevant ) {
+        switch ( isCacheRelevant ) {
+        case fileStatuses.fresh:
           return this._getFileRepresentation( cache );
-        } else {
-          return isFileDeleted ? null : this._requestFile( fileUrl )
+        case fileStatuses.stale:
+          return this._requestFile( fileUrl )
+        case fileStatuses.deleted:
+          return null;
         }
       })
     }
 
-    _isCachedFileRelevant( fileUrl, cachedResponse ) {
+    _getFileStatus( fileUrl, cachedResponse ) {
       return fetch( fileUrl, {
         method: "HEAD"
       }).then( resp => {
-        if ( resp.status === 404 ) {
-          return super.getCacheByName().then( cache => {
-            return cache.delete( fileUrl ).then(() => {
-              isFileDeleted = true;
-              return false;
-            })
-          })
-        }
         if ( resp.ok ) {
-          return cachedResponse.headers.get( "etag" ) === resp.headers.get( "etag" );
+          return cachedResponse.headers.get( "etag" ) === resp.headers.get( "etag" ) ? fileStatuses.fresh : fileStatuses.stale;
         } else {
-          return true;
+          if ( deletedFileStatusCodes.includes( resp.status )) {
+            return fileStatuses.deleted;
+          }
+          return fileStatuses.fresh;
         }
       }).catch( err => {
         super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to check file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
-        return true;
+        return fileStatuses.fresh;
       });
     }
 
