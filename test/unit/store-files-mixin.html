@@ -148,7 +148,7 @@
             });
           });
 
-          test( "for 404 should return false", (done) => {
+          test( "for 404 should return error", (done) => {
             const response = new Response(null, {
               status: 404,
               headers: {}
@@ -195,7 +195,7 @@
             storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then(() => {
               assert.isTrue( storeFilesMixin.log.calledWith(
                 "error",
-                "Failed to chack file relevancy",
+                "Failed to check file relevancy",
               ) );
               done();
             });

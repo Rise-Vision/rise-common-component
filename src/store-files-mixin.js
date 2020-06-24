@@ -7,6 +7,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
     refresh: 1000 * 60 * 60 * 2,
     expiry: 1000 * 60 * 60 * 4
   };
+  let isFileDeleted = false;
 
   class StoreFiles extends CacheMixin( base ) {
     constructor() {
@@ -37,11 +38,13 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _handleCachedFile( fileUrl, cache ) {
-      if ( this._isCachedFileRelevant( fileUrl, cache )) {
-        return this._getFileRepresentation( cache );
-      } else {
-        return this._requestFile( fileUrl )
-      }
+      return this._isCachedFileRelevant( fileUrl, cache ).then( isCacheRelevant => {
+        if ( isCacheRelevant ) {
+          return this._getFileRepresentation( cache );
+        } else {
+          return isFileDeleted ? null : this._requestFile( fileUrl )
+        }
+      })
     }
 
     _isCachedFileRelevant( fileUrl, cachedResponse ) {
@@ -51,17 +54,18 @@ export const StoreFilesMixin = dedupingMixin( base => {
         if ( resp.status === 404 ) {
           return super.getCacheByName().then( cache => {
             return cache.delete( fileUrl ).then(() => {
+              isFileDeleted = true;
               return false;
             })
           })
         }
-        if ( cachedResponse.headers.get( "etag" ) === resp.headers.get( "etag" )) {
-          return true;
+        if ( resp.ok ) {
+          return cachedResponse.headers.get( "etag" ) === resp.headers.get( "etag" );
         } else {
-          return false;
+          return true;
         }
       }).catch( err => {
-        super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to chack file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+        super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to check file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
         return true;
       });
     }
@@ -71,9 +75,12 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
       return fetch( fileUrl )
         .then( resp => {
-          respToCache = resp.clone();
-
-          return this._getFileRepresentation( resp );
+          if ( resp.ok ) {
+            respToCache = resp.clone();
+            return this._getFileRepresentation( resp );
+          } else {
+            return Promise.reject();
+          }
         })
         .then( objectURL => {
           super.putCache( respToCache, fileUrl );
