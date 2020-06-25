@@ -118,7 +118,7 @@
           });
         });
 
-        suite( "_isCachedFileRelevant", () => {
+        suite( "_getFileStatus", () => {
           let response;
           let cachedResponse;
 
@@ -132,23 +132,7 @@
             });
           });
 
-          test( "for 404 should delete cached response", (done) => {
-            const response = new Response(null, {
-              status: 404,
-              headers: {}
-            });
-            window.fetch.resolves(response);
-
-            const cache = { delete: sinon.stub().resolves() };
-            cacheMixin.getCacheByName = sinon.stub().resolves(cache);
-
-            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then(() => {
-              assert.isTrue( cache.delete.calledWith( "url" ) );
-              done();
-            });
-          });
-
-          test( "for 404 should return error", (done) => {
+          test( `for 404 should return "deleted"`, (done) => {
             const response = new Response(null, {
               status: 404,
               headers: {}
@@ -156,35 +140,63 @@
 
             window.fetch.resolves(response);
 
-            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
-              assert.isFalse(res);
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "deleted");
               done();
             });
           });
 
-          test( "should return true if cache is relevant", (done) => {
+          test( `for 403 should return "deleted"`, (done) => {
+            const response = new Response(null, {
+              status: 403,
+              headers: {}
+            });
+
             window.fetch.resolves(response);
 
-            storeFilesMixin._isCachedFileRelevant( "url", response ).then((res) => {
-              assert.isTrue(res);
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "deleted");
               done();
             });
           });
 
-          test( "should return false if cache is not relevant", (done) => {
+          test( `for 401 should return "deleted"`, (done) => {
+            const response = new Response(null, {
+              status: 401,
+              headers: {}
+            });
+
             window.fetch.resolves(response);
 
-            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
-              assert.isFalse(res);
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "deleted");
               done();
             });
           });
 
-          test( "should return true with rejection", (done) => {
+          test( `should return "fresh" if cache is relevant`, (done) => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._getFileStatus( "url", response ).then((res) => {
+              assert.isTrue(res === "fresh");
+              done();
+            });
+          });
+
+          test( `should return "stale" if cache is not relevant`, (done) => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "stale");
+              done();
+            });
+          });
+
+          test( `should return "fresh" with rejection`, (done) => {
             window.fetch.rejects();
 
-            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
-              assert.isTrue(res);
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "fresh");
               done();
             });
           });
@@ -192,7 +204,7 @@
           test( "should log an error on reject", (done) => {
             window.fetch.rejects();
 
-            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then(() => {
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then(() => {
               assert.isTrue( storeFilesMixin.log.calledWith(
                 "error",
                 "Failed to check file relevancy",
