@@ -25,6 +25,8 @@
     <script type="module">
       import * as storeFilesModule from '../../src/store-files-mixin.js'
 
+      const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
+
       suite( "store file", () => {
         let storeFilesMixin, cacheMixin, handleResponse, logger;
 
@@ -69,8 +71,59 @@
           });
         });
 
+        suite( "_handleCachedFile", () => {
+          let response;
+
+          setup(()=>{
+            response = new Response(validXmlData,{headers:{date: new Date()}});
+            URL.createObjectURL = sinon.stub();
+          });
+
+          teardown(() => {
+            sinon.restore();
+          });
+
+          test( `should return file representation for status "fresh"`, (done) => {
+            storeFilesMixin._getFileStatus = sinon.stub().resolves( "fresh" );
+            response.blob = sinon.stub().resolves( "BLOB" );
+
+            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
+              assert.isTrue( response.blob.called );
+              assert.isTrue( URL.createObjectURL.calledWith( "BLOB" ) );
+              done();
+            });
+          });
+
+          test( `should request a file for status "stale"`, (done) => {
+            storeFilesMixin._getFileStatus = sinon.stub().resolves( "stale" );
+            storeFilesMixin._requestFile = sinon.stub();
+
+            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
+              assert.isTrue( storeFilesMixin._requestFile.calledWith( "url" ) );
+              done();
+            });
+          });
+
+          test( `should return null for status "deleted"`, (done) => {
+            storeFilesMixin._getFileStatus = sinon.stub().resolves( "deleted" );
+
+            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
+              assert.isTrue( res === null );
+              done();
+            });
+          });
+
+          test( `should return null for default (status not covered)`, (done) => {
+            storeFilesMixin._getFileStatus = sinon.stub().resolves( "foo bar" );
+
+            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
+              assert.isTrue( res === null );
+              done();
+            });
+          });
+        });
+
         suite( "_requestFile", () => {
-          const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
           let response;
 
           setup(()=>{
@@ -215,7 +268,6 @@
         });
 
         suite( "_getFileRepresentation", () => {
-          const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
           let response;
 
           setup(() => {

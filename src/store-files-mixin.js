@@ -50,6 +50,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
         case fileStatuses.stale:
           return this._requestFile( fileUrl )
         case fileStatuses.deleted:
+        default:
           return null;
         }
       })
