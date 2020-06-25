@@ -43,7 +43,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _handleCachedFile( fileUrl, cache ) {
-      return this._isCachedFileRelevant( fileUrl, cache ).then( isCacheRelevant => {
+      return this._getFileStatus( fileUrl, cache ).then( isCacheRelevant => {
         switch ( isCacheRelevant ) {
         case fileStatuses.fresh:
           return this._getFileRepresentation( cache );
