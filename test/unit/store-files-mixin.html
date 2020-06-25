@@ -25,6 +25,8 @@
     <script type="module">
       import * as storeFilesModule from '../../src/store-files-mixin.js'
 
+      const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
+
       suite( "store file", () => {
         let storeFilesMixin, cacheMixin, handleResponse, logger;
 
@@ -69,8 +71,59 @@
           });
         });
 
+        suite( "_handleCachedFile", () => {
+          let response;
+
+          setup(()=>{
+            response = new Response(validXmlData,{headers:{date: new Date()}});
+            URL.createObjectURL = sinon.stub();
+          });
+
+          teardown(() => {
+            sinon.restore();
+          });
+
+          test( `should return file representation for status "fresh"`, (done) => {
+            storeFilesMixin._getFileStatus = sinon.stub().resolves( "fresh" );
+            response.blob = sinon.stub().resolves( "BLOB" );
+
+            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
+              assert.isTrue( response.blob.called );
+              assert.isTrue( URL.createObjectURL.calledWith( "BLOB" ) );
+              done();
+            });
+          });
+
+          test( `should request a file for status "stale"`, (done) => {
+            storeFilesMixin._getFileStatus = sinon.stub().resolves( "stale" );
+            storeFilesMixin._requestFile = sinon.stub();
+
+            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
+              assert.isTrue( storeFilesMixin._requestFile.calledWith( "url" ) );
+              done();
+            });
+          });
+
+          test( `should return null for status "deleted"`, (done) => {
+            storeFilesMixin._getFileStatus = sinon.stub().resolves( "deleted" );
+
+            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
+              assert.isTrue( res === null );
+              done();
+            });
+          });
+
+          test( `should return null for default (status not covered)`, (done) => {
+            storeFilesMixin._getFileStatus = sinon.stub().resolves( "foo bar" );
+
+            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
+              assert.isTrue( res === null );
+              done();
+            });
+          });
+        });
+
         suite( "_requestFile", () => {
-          const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
           let response;
 
           setup(()=>{
@@ -118,90 +171,7 @@
           });
         });
 
-        suite( "_handleCachedFile", () => {
-          const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
-          let response;
-
-          setup(() => {
-            response = new Response(validXmlData,{headers:{date: new Date()}});
-            cacheMixin.putCache = sinon.stub().resolves();
-            URL.createObjectURL = sinon.stub();
-          });
-
-          teardown(()=>{
-            sinon.restore();
-          });
-
-          suite( "response 200", () => {
-            suite( "cached file not relevant", () => {
-              setup(() => {
-                storeFilesMixin._isCachedFileRelevant = sinon.stub().returns(false);
-              });
-
-              test( "should update cached file", done => {
-                response.blob = sinon.stub().resolves();
-                window.fetch.resolves(response);
-
-                storeFilesMixin._handleCachedFile("file url", response).then(() => {
-                  assert.isTrue( cacheMixin.putCache.called );
-                  done();
-                });
-              });
-
-              test( "should return file representation", done => {
-                window.fetch.resolves(response);
-
-                storeFilesMixin._handleCachedFile("file url", response).then((res) => {
-                  assert.isTrue( URL.createObjectURL.called );
-                  done();
-                });
-              });
-            });
-
-            suite( "cached file relevant", () => {
-              setup(() => {
-                storeFilesMixin._isCachedFileRelevant = sinon.stub().returns(true);
-              });
-
-              test( "should return file representation", done => {
-                window.fetch.resolves(response);
-
-                storeFilesMixin._handleCachedFile("file url", response).then((res) => {
-                  assert.isTrue( URL.createObjectURL.called );
-                  done();
-                });
-              });
-            });
-          });
-
-          suite( "response 304", () => {
-            let cachedResponse;
-
-            setup(() => {
-              cachedResponse = new Response(validXmlData, {
-                headers: {date: new Date()}
-              });
-
-              response = new Response(null, {
-                status: 304,
-                headers: {date: new Date()}
-              });
-            });
-
-            test( "should return cached file representation", done => {
-              response.blob = sinon.stub().resolves();
-              storeFilesMixin._getFileRepresentation = sinon.stub().resolves();
-              window.fetch.resolves(response);
-
-              storeFilesMixin._handleCachedFile("file url", cachedResponse).then((res) => {
-                assert.isTrue( storeFilesMixin._getFileRepresentation.calledWith( cachedResponse ) );
-                done();
-              });
-            });
-          });
-        });
-
-        suite( "_isCachedFileRelevant", () => {
+        suite( "_getFileStatus", () => {
           let response;
           let cachedResponse;
 
@@ -215,29 +185,71 @@
             });
           });
 
-          test( "should return true if cache is relevant", (done) => {
+          test( `for 404 should return "deleted"`, (done) => {
+            const response = new Response(null, {
+              status: 404,
+              headers: {}
+            });
+
             window.fetch.resolves(response);
 
-            storeFilesMixin._isCachedFileRelevant( "url", response ).then((res) => {
-              assert.isTrue(res);
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "deleted");
               done();
             });
           });
 
-          test( "should return false if cache is not relevant", (done) => {
+          test( `for 403 should return "deleted"`, (done) => {
+            const response = new Response(null, {
+              status: 403,
+              headers: {}
+            });
+
             window.fetch.resolves(response);
 
-            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
-              assert.isFalse(res);
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "deleted");
               done();
             });
           });
 
-          test( "should return true with rejection", (done) => {
+          test( `for 401 should return "deleted"`, (done) => {
+            const response = new Response(null, {
+              status: 401,
+              headers: {}
+            });
+
+            window.fetch.resolves(response);
+
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "deleted");
+              done();
+            });
+          });
+
+          test( `should return "fresh" if cache is relevant`, (done) => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._getFileStatus( "url", response ).then((res) => {
+              assert.isTrue(res === "fresh");
+              done();
+            });
+          });
+
+          test( `should return "stale" if cache is not relevant`, (done) => {
+            window.fetch.resolves(response);
+
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "stale");
+              done();
+            });
+          });
+
+          test( `should return "fresh" with rejection`, (done) => {
             window.fetch.rejects();
 
-            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then((res) => {
-              assert.isTrue(res);
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
+              assert.isTrue(res === "fresh");
               done();
             });
           });
@@ -245,10 +257,10 @@
           test( "should log an error on reject", (done) => {
             window.fetch.rejects();
 
-            storeFilesMixin._isCachedFileRelevant( "url", cachedResponse ).then(() => {
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then(() => {
               assert.isTrue( storeFilesMixin.log.calledWith(
                 "error",
-                "Failed to chack file relevancy",
+                "Failed to check file relevancy",
               ) );
               done();
             });
@@ -256,7 +268,6 @@
         });
 
         suite( "_getFileRepresentation", () => {
-          const validXmlData = "<report><observation temperature=\"12\"/><location/></report>";
           let response;
 
           setup(() => {

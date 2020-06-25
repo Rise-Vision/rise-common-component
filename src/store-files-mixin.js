@@ -3,10 +3,16 @@ import { CacheMixin } from "./cache-mixin.js";
 
 export const StoreFilesMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
-    name: "store-files-mixin",
-    refresh: 1000 * 60 * 60 * 2,
-    expiry: 1000 * 60 * 60 * 4
-  };
+      name: "store-files-mixin",
+      refresh: 1000 * 60 * 60 * 2,
+      expiry: 1000 * 60 * 60 * 4
+    },
+    deletedFileStatusCodes = [ 401, 403, 404 ],
+    fileStatuses = {
+      fresh: "fresh",
+      stale: "stale",
+      deleted: "deleted"
+    };
 
   class StoreFiles extends CacheMixin( base ) {
     constructor() {
@@ -37,25 +43,34 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _handleCachedFile( fileUrl, cache ) {
-      if ( this._isCachedFileRelevant( fileUrl, cache )) {
-        return this._getFileRepresentation( cache );
-      } else {
-        return this._requestFile( fileUrl )
-      }
+      return this._getFileStatus( fileUrl, cache ).then( isCacheRelevant => {
+        switch ( isCacheRelevant ) {
+        case fileStatuses.fresh:
+          return this._getFileRepresentation( cache );
+        case fileStatuses.stale:
+          return this._requestFile( fileUrl )
+        case fileStatuses.deleted:
+        default:
+          return null;
+        }
+      })
     }
 
-    _isCachedFileRelevant( fileUrl, cache ) {
+    _getFileStatus( fileUrl, cachedResponse ) {
       return fetch( fileUrl, {
         method: "HEAD"
       }).then( resp => {
-        if ( cache.headers.get( "etag" ) === resp.headers.get( "etag" )) {
-          return true;
+        if ( resp.ok ) {
+          return cachedResponse.headers.get( "etag" ) === resp.headers.get( "etag" ) ? fileStatuses.fresh : fileStatuses.stale;
         } else {
-          return false;
+          if ( deletedFileStatusCodes.includes( resp.status )) {
+            return fileStatuses.deleted;
+          }
+          return fileStatuses.fresh;
         }
       }).catch( err => {
-        super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to chack file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
-        return true;
+        super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to check file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+        return fileStatuses.fresh;
       });
     }
 
@@ -64,9 +79,12 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
       return fetch( fileUrl )
         .then( resp => {
-          respToCache = resp.clone();
-
-          return this._getFileRepresentation( resp );
+          if ( resp.ok ) {
+            respToCache = resp.clone();
+            return this._getFileRepresentation( resp );
+          } else {
+            return Promise.reject();
+          }
         })
         .then( objectURL => {
           super.putCache( respToCache, fileUrl );
