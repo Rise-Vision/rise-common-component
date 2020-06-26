@@ -8,6 +8,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
       expiry: 1000 * 60 * 60 * 4
     },
     LOCAL_STORAGE_KEY = "rise_files_last_requested",
+    FILE_STATUS_CHECK_EXPIRY = 5,
     deletedFileStatusCodes = [ 401, 403, 404 ],
     fileStatuses = {
       fresh: "fresh",
@@ -111,6 +112,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
     _handleCachedFile( fileUrl, cache ) {
       return this._getFileStatus( fileUrl, cache ).then( isCacheRelevant => {
+        console.log( "_handleCachedFile", isCacheRelevant );
         switch ( isCacheRelevant ) {
         case fileStatuses.fresh:
           return this._getFileRepresentation( cache );
@@ -123,26 +125,66 @@ export const StoreFilesMixin = dedupingMixin( base => {
       })
     }
 
+    _hasFileStatusCheckExpired( fileUrl ) {
+      const date = this.lastRequestedStorage.getTimestamp( fileUrl );
+
+      if ( !date ) {
+        // nothing stored, return as if expired
+        return true;
+      }
+
+      try {
+        const lastRequestedDate = new Date( date );
+
+        console.log( "time diff in minutes", Math.floor(( Date.now() - lastRequestedDate.getTime()) / 1000 / 60 ));
+
+        return Math.floor(( Date.now() - lastRequestedDate.getTime()) / 1000 / 60 ) > FILE_STATUS_CHECK_EXPIRY;
+      } catch ( err ) {
+        console.warn( "could not calculate file status check expiry", err );
+        return true;
+      }
+    }
+
+    _getUrlWithCacheBuster( url ) {
+      const str = url.split( "?" ),
+        separator = ( str.length === 1 ) ? "?" : "&";
+
+      return `${url}${separator}cb=${Date.now()}`;
+    }
+
     _getFileStatus( fileUrl, cachedResponse ) {
-      return fetch( fileUrl, {
+      if ( !this._hasFileStatusCheckExpired( fileUrl )) {
+        console.log( "didn't expire" );
+        // TODO: i think theres a problem here
+        return Promise.resolve( fileStatuses.fresh );
+      }
+
+      return fetch( this._getUrlWithCacheBuster( fileUrl ), {
         method: "HEAD"
       }).then( resp => {
         if ( resp.ok ) {
+          console.log( "comparing etags" );
           return cachedResponse.headers.get( "etag" ) === resp.headers.get( "etag" ) ? fileStatuses.fresh : fileStatuses.stale;
         } else {
           if ( deletedFileStatusCodes.includes( resp.status )) {
             return fileStatuses.deleted;
           }
+
+          super.log( StoreFiles.LOG_TYPE_WARNING, "File status request error", { url: fileUrl, status: resp.status }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+
           return fileStatuses.fresh;
         }
       }).catch( err => {
         super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to check file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
         return fileStatuses.fresh;
-      });
+      })
+        .finally(() => this.lastRequestedStorage.save( fileUrl, new Date().toUTCString()));
     }
 
     _requestFile( fileUrl ) {
       let respToCache;
+
+      console.log( "doing a GET request" );
 
       return fetch( fileUrl )
         .then( resp => {
@@ -154,7 +196,9 @@ export const StoreFilesMixin = dedupingMixin( base => {
           }
         })
         .then( objectURL => {
+          console.log( "putting into cache" )
           super.putCache( respToCache, fileUrl );
+          console.log( "returning object url" );
           return objectURL;
         })
         .catch( err => {
@@ -164,6 +208,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _getFileRepresentation( resp ) {
+      console.log( "returning file blob" );
       return resp.blob().then( blob => {
         return URL.createObjectURL( blob );
       })
