@@ -164,12 +164,12 @@ export const StoreFilesMixin = dedupingMixin( base => {
             return fileStatuses.deleted;
           }
 
-          super.log( StoreFiles.LOG_TYPE_WARNING, "File status request error", { url: fileUrl, status: resp.status }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+          super.log( StoreFiles.LOG_TYPE_WARNING, "File status request error", { url: fileUrl, err: resp.statusText }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
 
           return fileStatuses.fresh;
         }
       }).catch( err => {
-        super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to check file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+        super.log( StoreFiles.LOG_TYPE_WARNING, "Failed to check file status", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
         return fileStatuses.fresh;
       })
         .finally(() => this.lastRequestedStorage.save( fileUrl, new Date().toUTCString()));
@@ -184,7 +184,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
             respToCache = resp.clone();
             return this._getFileRepresentation( resp );
           } else {
-            return Promise.reject();
+            return Promise.reject( resp.statusText );
           }
         })
         .then( objectURL => {

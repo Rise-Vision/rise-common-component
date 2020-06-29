@@ -168,6 +168,28 @@
               done();
             });
           });
+
+          test( "should log a GET request error", (done) => {
+            const response = new Response(null, {
+              statusText: "File not found",
+              status: 404,
+              headers: {}
+            });
+
+            window.fetch.resolves(response);
+
+            storeFilesMixin._requestFile("test.com").then(() => {
+              assert.isTrue( storeFilesMixin.log.calledWith(
+                "error",
+                "Failed to get file from storage",
+                {
+                  url: "test.com",
+                  err: "File not found"
+                }
+              ) );
+              done();
+            });
+          } );
         });
 
         suite( "_getFileStatus", () => {
@@ -246,6 +268,28 @@
             });
           });
 
+          test ( `should return "fresh" and log warning when HEAD request error`, (done) => {
+            const response = new Response(null, {
+              status: 500,
+              statusText: "Server error",
+              headers: {}
+            });
+
+            window.fetch.resolves(response);
+
+            storeFilesMixin._getFileStatus( "url", cachedResponse ).then(() => {
+              assert.isTrue( storeFilesMixin.log.calledWith(
+                "warning",
+                "File status request error",
+                {
+                  url: "url",
+                  err: "Server error"
+                }
+              ) );
+              done();
+            });
+          } );
+
           test( `should return "fresh" with rejection`, (done) => {
             window.fetch.rejects();
 
@@ -260,8 +304,8 @@
 
             storeFilesMixin._getFileStatus( "url", cachedResponse ).then(() => {
               assert.isTrue( storeFilesMixin.log.calledWith(
-                "error",
-                "Failed to check file relevancy",
+                "warning",
+                "Failed to check file status",
               ) );
               done();
             });
