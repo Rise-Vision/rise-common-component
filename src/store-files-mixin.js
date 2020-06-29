@@ -112,7 +112,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
     _handleCachedFile( fileUrl, cache ) {
       return this._getFileStatus( fileUrl, cache ).then( isCacheRelevant => {
-        console.log( "_handleCachedFile", isCacheRelevant );
         switch ( isCacheRelevant ) {
         case fileStatuses.fresh:
           return this._getFileRepresentation( cache );
@@ -136,8 +135,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
       try {
         const lastRequestedDate = new Date( date );
 
-        console.log( "time diff in minutes", Math.floor(( Date.now() - lastRequestedDate.getTime()) / 1000 / 60 ));
-
         return Math.floor(( Date.now() - lastRequestedDate.getTime()) / 1000 / 60 ) > FILE_STATUS_CHECK_EXPIRY;
       } catch ( err ) {
         console.warn( "could not calculate file status check expiry", err );
@@ -154,8 +151,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
 
     _getFileStatus( fileUrl, cachedResponse ) {
       if ( !this._hasFileStatusCheckExpired( fileUrl )) {
-        console.log( "didn't expire" );
-        // TODO: i think theres a problem here
         return Promise.resolve( fileStatuses.fresh );
       }
 
@@ -163,7 +158,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
         method: "HEAD"
       }).then( resp => {
         if ( resp.ok ) {
-          console.log( "comparing etags" );
           return cachedResponse.headers.get( "etag" ) === resp.headers.get( "etag" ) ? fileStatuses.fresh : fileStatuses.stale;
         } else {
           if ( deletedFileStatusCodes.includes( resp.status )) {
@@ -184,8 +178,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
     _requestFile( fileUrl ) {
       let respToCache;
 
-      console.log( "doing a GET request" );
-
       return fetch( fileUrl )
         .then( resp => {
           if ( resp.ok ) {
@@ -196,9 +188,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
           }
         })
         .then( objectURL => {
-          console.log( "putting into cache" )
           super.putCache( respToCache, fileUrl );
-          console.log( "returning object url" );
           return objectURL;
         })
         .catch( err => {
@@ -208,7 +198,6 @@ export const StoreFilesMixin = dedupingMixin( base => {
     }
 
     _getFileRepresentation( resp ) {
-      console.log( "returning file blob" );
       return resp.blob().then( blob => {
         return URL.createObjectURL( blob );
       })
