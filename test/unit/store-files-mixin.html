@@ -61,8 +61,7 @@
 
           test( "should request the file if cache is unavailable", done => {
             sinon.stub(storeFilesMixin.__proto__, "_requestFile");
-            let stubbedCache = sinon.stub(storeFilesMixin.__proto__.__proto__, "getCache");
-            stubbedCache.resolves(Promise.reject());
+            sinon.stub(storeFilesMixin, "_getCacheCustom").rejects();
 
             storeFilesMixin.getFile().then(() => {
               assert.isTrue(storeFilesMixin._requestFile.called);
@@ -183,6 +182,8 @@
             cachedResponse = new Response(null, {
               headers: { etag: "false" }
             });
+
+            sinon.stub(storeFilesMixin, "_hasFileStatusCheckExpired").returns(true);
           });
 
           test( `for 404 should return "deleted"`, (done) => {
