@@ -8,6 +8,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
       expiry: 1000 * 60 * 60 * 4
     },
     LOCAL_STORAGE_KEY = "rise_files_last_requested",
+    FILE_STATUS_CHECK_EXPIRY = 10,
     deletedFileStatusCodes = [ 401, 403, 404 ],
     fileStatuses = {
       fresh: "fresh",
@@ -123,8 +124,37 @@ export const StoreFilesMixin = dedupingMixin( base => {
       })
     }
 
+    _hasFileStatusCheckExpired( fileUrl ) {
+      const date = this.lastRequestedStorage.getTimestamp( fileUrl );
+
+      if ( !date ) {
+        // nothing stored, return as if expired
+        return true;
+      }
+
+      try {
+        const lastRequestedDate = new Date( date );
+
+        return Math.floor(( Date.now() - lastRequestedDate.getTime()) / 1000 / 60 ) > FILE_STATUS_CHECK_EXPIRY;
+      } catch ( err ) {
+        console.warn( "could not calculate file status check expiry", err );
+        return true;
+      }
+    }
+
+    _getUrlWithCacheBuster( url ) {
+      const str = url.split( "?" ),
+        separator = ( str.length === 1 ) ? "?" : "&";
+
+      return `${url}${separator}cb=${Date.now()}`;
+    }
+
     _getFileStatus( fileUrl, cachedResponse ) {
-      return fetch( fileUrl, {
+      if ( !this._hasFileStatusCheckExpired( fileUrl )) {
+        return Promise.resolve( fileStatuses.fresh );
+      }
+
+      return fetch( this._getUrlWithCacheBuster( fileUrl ), {
         method: "HEAD"
       }).then( resp => {
         if ( resp.ok ) {
@@ -133,12 +163,16 @@ export const StoreFilesMixin = dedupingMixin( base => {
           if ( deletedFileStatusCodes.includes( resp.status )) {
             return fileStatuses.deleted;
           }
+
+          super.log( StoreFiles.LOG_TYPE_WARNING, "File status request error", { url: fileUrl, err: resp.statusText }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+
           return fileStatuses.fresh;
         }
       }).catch( err => {
-        super.log( StoreFiles.LOG_TYPE_ERROR, "Failed to check file relevancy", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
+        super.log( StoreFiles.LOG_TYPE_WARNING, "Failed to check file status", { url: fileUrl, err }, StoreFiles.LOG_AT_MOST_ONCE_PER_DAY );
         return fileStatuses.fresh;
-      });
+      })
+        .finally(() => this.lastRequestedStorage.save( fileUrl, new Date().toUTCString()));
     }
 
     _requestFile( fileUrl ) {
@@ -150,7 +184,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
             respToCache = resp.clone();
             return this._getFileRepresentation( resp );
           } else {
-            return Promise.reject();
+            return Promise.reject( resp.statusText );
           }
         })
         .then( objectURL => {
