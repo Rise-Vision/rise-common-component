@@ -8,7 +8,7 @@ export const StoreFilesMixin = dedupingMixin( base => {
       expiry: 1000 * 60 * 60 * 4
     },
     LOCAL_STORAGE_KEY = "rise_files_last_requested",
-    FILE_STATUS_CHECK_EXPIRY = 5,
+    FILE_STATUS_CHECK_EXPIRY = 10,
     deletedFileStatusCodes = [ 401, 403, 404 ],
     fileStatuses = {
       fresh: "fresh",

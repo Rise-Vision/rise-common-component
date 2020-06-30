@@ -341,23 +341,23 @@
           });
         });
 
-        suite( "_hasFileStatusCheckExpired", () => {
+        suite( "_hasFileStatusCheckExpired", () =>{
           test( "should return true if no saved timestamp exists", () => {
             sinon.stub( storeFilesMixin.lastRequestedStorage, "getTimestamp" ).returns(null);
 
             assert.isTrue( storeFilesMixin._hasFileStatusCheckExpired( "test" ) );
           } );
 
-          test( "should return false if it has not expired (5 mins)", () => {
+          test( "should return false if it has not expired (10 mins)", () => {
             sinon.stub( storeFilesMixin.lastRequestedStorage, "getTimestamp" ).returns("Mon, 29 Jun 2020 15:20:45 GMT");
-            sinon.stub(Date, "now").returns(1593444068515);
+            sinon.stub(Date, "now").returns(1593444525000); // Mon, 29 Jun 2020 15:28:45 GMT
 
             assert.isFalse(storeFilesMixin._hasFileStatusCheckExpired("test"));
           } );
 
-          test( "should return true if it has expired (5 mins)", () => {
+          test( "should return true if it has expired (10 mins)", () => {
             sinon.stub( storeFilesMixin.lastRequestedStorage, "getTimestamp" ).returns("Mon, 29 Jun 2020 15:20:45 GMT");
-            sinon.stub(Date, "now").returns(1593445973598);
+            sinon.stub(Date, "now").returns(1593445973598); // Mon, 29 Jun 2020 15:52:53 GMT
 
             assert.isTrue(storeFilesMixin._hasFileStatusCheckExpired("test"));
           } );
