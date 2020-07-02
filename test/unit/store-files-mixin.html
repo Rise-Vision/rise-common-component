@@ -68,6 +68,23 @@
               done();
             });
           });
+
+          test( "should resolve Promise with object url if cache available and 'omitCheckingCachedStatus' flag set", (done) => {
+            const response = new Response(validXmlData,{headers:{date: new Date()}});
+
+            sinon.stub(storeFilesMixin.__proto__, "_handleCachedFile");
+            sinon.stub(storeFilesMixin, "_getFileRepresentation").returns("test object url");
+            sinon.stub(storeFilesMixin, "_getCacheCustom").resolves(Promise.resolve(response));
+
+            storeFilesMixin.getFile("test", true).then((objectUrl) => {
+              assert.equal(objectUrl, "test object url");
+              assert.isFalse(storeFilesMixin._handleCachedFile.called);
+            })
+            .catch((err) => {
+              console.log("shouldn't be here", err);
+              assert.fail();
+            }).finally(() => done());
+          } );
         });
 
         suite( "_handleCachedFile", () => {
