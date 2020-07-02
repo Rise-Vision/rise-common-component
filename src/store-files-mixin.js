@@ -89,8 +89,12 @@ export const StoreFilesMixin = dedupingMixin( base => {
       this.cacheConfig = Object.assign({}, CACHE_CONFIG );
     }
 
-    getFile( fileUrl ) {
+    getFile( fileUrl, omitCheckingCachedStatus = false ) {
       return this._getCacheCustom( fileUrl ).then( cache => {
+        if ( omitCheckingCachedStatus ) {
+          return Promise.resolve( this._getFileRepresentation( cache ));
+        }
+
         return this._handleCachedFile( fileUrl, cache );
       }).catch(() => {
         return this._requestFile( fileUrl );
