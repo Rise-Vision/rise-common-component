@@ -16,11 +16,15 @@
 <body>
 
 <script type="text/javascript">
-  let preview = false;
+  let preview = false,
+    sharedSchedule = false;
 
   RisePlayerConfiguration = {
     Logger: {},
-    isPreview: () => preview
+    isPreview: () => preview,
+    Helpers: {
+      isSharedSchedule: () => sharedSchedule
+    }
   };
 </script>
 
@@ -75,6 +79,11 @@
     });
 
     suite( "log", () => {
+      teardown(() => {
+        preview = false;
+        sharedSchedule = false;
+      });
+
       test( "should call with correct parameters", () => {
         logger.log(Logger.LOG_TYPE_INFO, "event", "details", "additionalFields");
 
@@ -113,18 +122,19 @@
         assert.isFalse( RisePlayerConfiguration.Logger.error.called );
       });
 
-      test( "should log when not in preview", () => {
-        preview = false;
-        logger.log(Logger.LOG_TYPE_INFO);
-
-        assert.isTrue(RisePlayerConfiguration.Logger.info.called);
-      });
-
-      test( "should not log in preview", () => {
+      test( "should not log in preview (if not shared schedules)", () => {
         preview = true;
         logger.log(Logger.LOG_TYPE_INFO);
 
         assert.isFalse(RisePlayerConfiguration.Logger.info.called);
+      });
+
+      test( "should log when in shared schedule", () => {
+        preview = true;
+        sharedSchedule = true;
+        logger.log(Logger.LOG_TYPE_INFO);
+
+        assert.isTrue(RisePlayerConfiguration.Logger.info.called);
       });
     });
 

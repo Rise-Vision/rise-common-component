@@ -38,7 +38,7 @@ export const LoggerMixin = dedupingMixin( base => {
     }
 
     log( type, event, details = null, additionalFields ) {
-      if ( RisePlayerConfiguration.isPreview()) {
+      if ( RisePlayerConfiguration.isPreview() && !RisePlayerConfiguration.Helpers.isSharedSchedule()) {
         return;
       }
 
