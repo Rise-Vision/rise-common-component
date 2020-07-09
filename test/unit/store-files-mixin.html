@@ -47,18 +47,7 @@
           sinon.restore();
         });
 
-        suite( "get", () => {
-          test( "should call cache handler if cache is available and valid", done => {
-            sinon.stub(storeFilesMixin.__proto__, "_handleCachedFile");
-            let stubbedCache = sinon.stub(storeFilesMixin, "_getCacheCustom");
-            stubbedCache.resolves(Promise.resolve());
-
-            storeFilesMixin.getFile().then(() => {
-              assert.isTrue(storeFilesMixin._handleCachedFile.called);
-              done();
-            });
-          });
-
+        suite( "getFile", () => {
           test( "should request the file if cache is unavailable", done => {
             sinon.stub(storeFilesMixin.__proto__, "_requestFile");
             sinon.stub(storeFilesMixin, "_getCacheCustom").rejects();
@@ -69,74 +58,20 @@
             });
           });
 
-          test( "should resolve Promise with object url if cache available and 'omitCheckingCachedStatus' flag set", (done) => {
+          test( "should resolve with object url if cache available", (done) => {
             const response = new Response(validXmlData,{headers:{date: new Date()}});
 
-            sinon.stub(storeFilesMixin.__proto__, "_handleCachedFile");
             sinon.stub(storeFilesMixin, "_getFileRepresentation").returns("test object url");
             sinon.stub(storeFilesMixin, "_getCacheCustom").resolves(Promise.resolve(response));
 
             storeFilesMixin.getFile("test", true).then((objectUrl) => {
               assert.equal(objectUrl, "test object url");
-              assert.isFalse(storeFilesMixin._handleCachedFile.called);
             })
             .catch((err) => {
               console.log("shouldn't be here", err);
               assert.fail();
             }).finally(() => done());
           } );
-        });
-
-        suite( "_handleCachedFile", () => {
-          let response;
-
-          setup(()=>{
-            response = new Response(validXmlData,{headers:{date: new Date()}});
-            URL.createObjectURL = sinon.stub();
-          });
-
-          teardown(() => {
-            sinon.restore();
-          });
-
-          test( `should return file representation for status "fresh"`, (done) => {
-            storeFilesMixin._getFileStatus = sinon.stub().resolves( "fresh" );
-            response.blob = sinon.stub().resolves( "BLOB" );
-
-            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
-              assert.isTrue( response.blob.called );
-              assert.isTrue( URL.createObjectURL.calledWith( "BLOB" ) );
-              done();
-            });
-          });
-
-          test( `should request a file for status "stale"`, (done) => {
-            storeFilesMixin._getFileStatus = sinon.stub().resolves( "stale" );
-            storeFilesMixin._requestFile = sinon.stub();
-
-            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
-              assert.isTrue( storeFilesMixin._requestFile.calledWith( "url" ) );
-              done();
-            });
-          });
-
-          test( `should return null for status "deleted"`, (done) => {
-            storeFilesMixin._getFileStatus = sinon.stub().resolves( "deleted" );
-
-            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
-              assert.isTrue( res === null );
-              done();
-            });
-          });
-
-          test( `should return null for default (status not covered)`, (done) => {
-            storeFilesMixin._getFileStatus = sinon.stub().resolves( "foo bar" );
-
-            storeFilesMixin._handleCachedFile( "url", response ).then((res) => {
-              assert.isTrue( res === null );
-              done();
-            });
-          });
         });
 
         suite( "_requestFile", () => {
@@ -171,7 +106,7 @@
             });
           });
 
-          test( "should cache response and creat objectUrl ", done => {
+          test( "should cache response and create objectUrl ", done => {
             sinon.stub(response, "clone");
             storeFilesMixin.lastRequestedStorage = {
               save: sinon.stub(),
@@ -209,136 +144,6 @@
           } );
         });
 
-        suite( "_getFileStatus", () => {
-          let response;
-          let cachedResponse;
-
-          setup(() => {
-            response = new Response(null, {
-              headers: { etag: "true" }
-            });
-
-            cachedResponse = new Response(null, {
-              headers: { etag: "false" }
-            });
-
-            sinon.stub(storeFilesMixin, "_hasFileStatusCheckExpired").returns(true);
-          });
-
-          test( `for 404 should return "deleted"`, (done) => {
-            const response = new Response(null, {
-              status: 404,
-              headers: {}
-            });
-
-            window.fetch.resolves(response);
-
-            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
-              assert.isTrue(res === "deleted");
-              done();
-            });
-          });
-
-          test( `for 403 should return "deleted"`, (done) => {
-            const response = new Response(null, {
-              status: 403,
-              headers: {}
-            });
-
-            window.fetch.resolves(response);
-
-            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
-              assert.isTrue(res === "deleted");
-              done();
-            });
-          });
-
-          test( `for 401 should return "deleted"`, (done) => {
-            const response = new Response(null, {
-              status: 401,
-              headers: {}
-            });
-
-            window.fetch.resolves(response);
-
-            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
-              assert.isTrue(res === "deleted");
-              done();
-            });
-          });
-
-          test( `should return "fresh" if cache is relevant`, (done) => {
-            window.fetch.resolves(response);
-
-            storeFilesMixin._getFileStatus( "url", response ).then((res) => {
-              assert.isTrue(res === "fresh");
-              done();
-            });
-          });
-
-          test( `should return "stale" if cache is not relevant`, (done) => {
-            window.fetch.resolves(response);
-
-            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
-              assert.isTrue(res === "stale");
-              done();
-            });
-          });
-
-          test ( `should return "fresh" and log warning when HEAD request error`, (done) => {
-            const response = new Response(null, {
-              status: 500,
-              statusText: "Server error",
-              headers: {}
-            });
-
-            window.fetch.resolves(response);
-
-            storeFilesMixin._getFileStatus( "url", cachedResponse ).then(() => {
-              assert.isTrue( storeFilesMixin.log.calledWith(
-                "warning",
-                "File status request error",
-                {
-                  url: "url",
-                  err: "Server error"
-                }
-              ) );
-              done();
-            });
-          } );
-
-          test( `should return "fresh" with rejection`, (done) => {
-            window.fetch.rejects();
-
-            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
-              assert.isTrue(res === "fresh");
-              done();
-            });
-          });
-
-          test( "should log an error on reject", (done) => {
-            window.fetch.rejects();
-
-            storeFilesMixin._getFileStatus( "url", cachedResponse ).then(() => {
-              assert.isTrue( storeFilesMixin.log.calledWith(
-                "warning",
-                "Failed to check file status",
-              ) );
-              done();
-            });
-          });
-
-          test( `should return "fresh" if file status check has not expired`, (done) => {
-            storeFilesMixin._hasFileStatusCheckExpired.restore();
-            sinon.stub(storeFilesMixin, "_hasFileStatusCheckExpired").returns(false);
-
-            storeFilesMixin._getFileStatus( "url", cachedResponse ).then((res) => {
-              assert.isTrue(res === "fresh");
-              done();
-            });
-          } );
-        });
-
         suite( "_getFileRepresentation", () => {
           let response;
 
@@ -355,40 +160,6 @@
                 assert.isTrue( URL.createObjectURL.calledWith( "BLOB" ) );
                 done();
               });
-          });
-        });
-
-        suite( "_hasFileStatusCheckExpired", () =>{
-          test( "should return true if no saved timestamp exists", () => {
-            sinon.stub( storeFilesMixin.lastRequestedStorage, "getTimestamp" ).returns(null);
-
-            assert.isTrue( storeFilesMixin._hasFileStatusCheckExpired( "test" ) );
-          } );
-
-          test( "should return false if it has not expired (10 mins)", () => {
-            sinon.stub( storeFilesMixin.lastRequestedStorage, "getTimestamp" ).returns("Mon, 29 Jun 2020 15:20:45 GMT");
-            sinon.stub(Date, "now").returns(1593444525000); // Mon, 29 Jun 2020 15:28:45 GMT
-
-            assert.isFalse(storeFilesMixin._hasFileStatusCheckExpired("test"));
-          } );
-
-          test( "should return true if it has expired (10 mins)", () => {
-            sinon.stub( storeFilesMixin.lastRequestedStorage, "getTimestamp" ).returns("Mon, 29 Jun 2020 15:20:45 GMT");
-            sinon.stub(Date, "now").returns(1593445973598); // Mon, 29 Jun 2020 15:52:53 GMT
-
-            assert.isTrue(storeFilesMixin._hasFileStatusCheckExpired("test"));
-          } );
-        } );
-
-        suite("_getUrlWithCacheBuster", () => {
-          test("should append a timestamp cachebuster to url", () => {
-            sinon.stub(Date, "now").returns(1593446178078);
-            assert.equal(storeFilesMixin._getUrlWithCacheBuster( "https://test.com/test.jpg" ), "https://test.com/test.jpg?cb=1593446178078");
-          });
-
-          test("should account for any query params when appending cachebuster", () => {
-            sinon.stub(Date, "now").returns(1593446178078);
-            assert.equal(storeFilesMixin._getUrlWithCacheBuster( "https://test.com/test.jpg?test=test" ), "https://test.com/test.jpg?test=test&cb=1593446178078");
           });
         });
       });
