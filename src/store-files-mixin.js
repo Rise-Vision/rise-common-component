@@ -3,9 +3,7 @@ import { CacheMixin } from "./cache-mixin.js";
 
 export const StoreFilesMixin = dedupingMixin( base => {
   const CACHE_CONFIG = {
-    name: "store-files-mixin",
-    refresh: 1000 * 60 * 60 * 2,
-    expiry: 1000 * 60 * 60 * 4
+    name: "store-files-mixin"
   };
 
   class StoreFiles extends CacheMixin( base ) {
