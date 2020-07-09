@@ -34,14 +34,16 @@
   }
 </script>
 <script type="module">
-  import * as storeFilesModule from '../../src/store-files-mixin.js'
+  import * as lastRequestedStorageModule from '../../src/last-requested-storage-mixin.js';
+
+  const LastRequestedStorage = lastRequestedStorageModule.LastRequestedStorageMixin(class {});
+  let lastRequestedStorage;
 
   suite("last requested storage", () => {
     let lastRequestedStorage;
 
     setup(() => {
-      const StoreFiles = storeFilesModule.StoreFilesMixin(class {});
-      lastRequestedStorage = new StoreFiles().lastRequestedStorage;
+      lastRequestedStorage = new LastRequestedStorage();
 
       createLocalStorageStub();
     });
