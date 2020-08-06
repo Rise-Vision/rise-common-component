@@ -112,6 +112,20 @@ export const CacheMixin = dedupingMixin( base => {
       this._deleteExpiredCache();
     }
 
+    _getCache() {
+      if ( this._caches ) {
+        if ( !( window.caches && window.caches.open )) {
+          super.log( Cache.LOG_TYPE_WARNING, "cache API not available", {}, Cache.LOG_AT_MOST_ONCE_PER_DAY );
+        }
+
+        return this._caches.open( this.cacheConfig.name );
+      } else {
+        super.log( Cache.LOG_TYPE_WARNING, "localStorage fallback API not available", {}, Cache.LOG_AT_MOST_ONCE_PER_DAY );
+
+        return Promise.reject();
+      }
+    }
+
     _isResponseExpired( response, expiration ) {
       if ( expiration === -1 ) {
         return false;
@@ -124,7 +138,7 @@ export const CacheMixin = dedupingMixin( base => {
 
     _deleteExpiredCache() {
       if ( this._caches ) {
-        this.getCacheByName().then( cache => {
+        this._getCache().then( cache => {
           return cache.keys().then( keys => {
             keys.forEach( key => {
               cache.match( key ).then( response => {
@@ -153,7 +167,7 @@ export const CacheMixin = dedupingMixin( base => {
 
     putCache( response, url ) {
       if ( this._caches ) {
-        return this.getCacheByName().then( cache => {
+        return this._getCache().then( cache => {
           return cache.put( this.getCacheResponseKey( response ) || url, response );
         }).catch( err => {
           super.log( Cache.LOG_TYPE_WARNING, "cache put failed", { url: response.url || url, err }, Cache.LOG_AT_MOST_ONCE_PER_DAY );
@@ -167,7 +181,7 @@ export const CacheMixin = dedupingMixin( base => {
       if ( this._caches ) {
         let _cache;
 
-        return this.getCacheByName().then( cache => {
+        return this._getCache().then( cache => {
           _cache = cache;
           return cache.match( this.getCacheRequestKey( url ));
         }).then( response => {
@@ -183,20 +197,6 @@ export const CacheMixin = dedupingMixin( base => {
           }
         });
       } else {
-        return Promise.reject();
-      }
-    }
-
-    getCacheByName() {
-      if ( this._caches ) {
-        if ( !( window.caches && window.caches.open )) {
-          super.log( Cache.LOG_TYPE_WARNING, "cache API not available", {}, Cache.LOG_AT_MOST_ONCE_PER_DAY );
-        }
-
-        return this._caches.open( this.cacheConfig.name );
-      } else {
-        super.log( Cache.LOG_TYPE_WARNING, "localStorage fallback API not available", {}, Cache.LOG_AT_MOST_ONCE_PER_DAY );
-
         return Promise.reject();
       }
     }
