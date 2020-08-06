@@ -89,7 +89,7 @@
       });
     });
 
-    suite( "deleteExpiredCache", () => {
+    suite("deleteExpiredCache", () => {
 
       test( "should clear old cache entries on init", done => {
         cache.initCache();
@@ -114,7 +114,7 @@
       });
     });
 
-    suite( "get", () => {
+    suite("get", () => {
       test( "should reject promise if key is not found", done => {
         cachesOpen = {
           match: sinon.stub().resolves(null)
@@ -185,7 +185,7 @@
       });
     });
 
-    suite( "put", () => {
+    suite("put", () => {
       setup(() => {
         cachesOpen = {
           put: sinon.stub().resolves()
@@ -231,52 +231,6 @@
 
     });
 
-    suite( "getCacheByName", () => {
-      var _caches;
-
-      setup(() => {
-        cache.__proto__.__proto__.log = sinon.stub();
-        _caches = cache._caches;
-      });
-
-      teardown(() => {
-        sinon.restore();
-        cache._caches = _caches;
-      });
-
-      test( "should log if no _caches available", done => {
-        cache._caches = undefined;
-
-        cache.getCacheByName();
-
-        assert.isTrue( cache.log.calledWith(
-          "warning",
-          "localStorage fallback API not available",
-        ));
-        done();
-      });
-
-      test( "should log if caches not supported", done => {
-        sinon.stub(window, "caches").value({});
-
-        cache.getCacheByName();
-
-        assert.isTrue( cache.log.calledWith(
-          "warning",
-          "cache API not available",
-        ) );
-        done();
-      });
-
-      test( "should return cache by name from config", done => {
-        cache.getCacheByName().then((res) => {
-          assert.equal( res, cachesOpen );
-
-          done();
-        });
-      });
-    });
-
     suite("no _caches available", () => {
       var _caches;
 
@@ -289,13 +243,13 @@
         cache._caches = _caches;
       });
 
-      test("should reject getCacheByName if _caches is not available", done => {
-        cache.getCacheByName().catch(() => {
+      test("should reject _getCache if _caches is not available", done => {
+        cache._getCache().catch(() => {
           assert.isTrue( true );
 
           done();
         });
-      });
+      });      
 
       test("should reject get if _caches is not available", done => {
         cache.getCache( "key3" ).catch(() => {
@@ -312,7 +266,7 @@
           done();
         });
       });
-
+      
     });
   });
 </script>
