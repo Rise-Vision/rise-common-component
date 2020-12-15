@@ -81,6 +81,16 @@ export const RiseElementMixin = dedupingMixin( base => {
           version: this.version
         });
 
+        if ( RisePlayerConfiguration
+        && RisePlayerConfiguration.Viewer
+        && RisePlayerConfiguration.Viewer.startEndpointApplicationHeartbeats ) {
+          RisePlayerConfiguration.Viewer.startEndpointApplicationHeartbeats({
+            componentId: this.id,
+            eventApp: this.tagName.toLowerCase(),
+            eventAppVersion: this.version
+          });
+        }
+
         if ( RisePlayerConfiguration.isConfigured()) {
           this._init();
         } else {

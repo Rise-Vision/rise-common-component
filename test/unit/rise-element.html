@@ -14,7 +14,8 @@
 
   <script type="text/javascript">
     RisePlayerConfiguration = {
-      isConfigured: () => false
+      isConfigured: () => false,
+      Viewer: { }
     };
   </script>
   <script src="../../src/rise-common-component-config.js" type="module"></script>
@@ -90,6 +91,22 @@
 
         assert.isTrue( element._init.calledOnce );
         assert.isFalse( stub.calledTwice );
+      });
+
+      test( "should initiate endpoint application heartbeats", () => {
+        RisePlayerConfiguration.Viewer.startEndpointApplicationHeartbeats =
+sinon.stub();
+
+        element.ready();
+
+        assert.isTrue( RisePlayerConfiguration.Viewer.startEndpointApplicationHeartbeats.calledOnce );
+        assert.isFalse( RisePlayerConfiguration.Viewer.startEndpointApplicationHeartbeats.calledTwice );
+      });
+
+      test( "should not fail if heartbeats functionality is missing", () => {
+        delete RisePlayerConfiguration.Viewer.startEndpointApplicationHeartbeats;
+
+        element.ready();
       });
     });
 
