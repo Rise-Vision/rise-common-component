@@ -38,10 +38,6 @@ export const LoggerMixin = dedupingMixin( base => {
     }
 
     log( type, event, details = null, additionalFields ) {
-      if ( RisePlayerConfiguration.isPreview()) {
-        return;
-      }
-
       switch ( type ) {
       case "info":
         RisePlayerConfiguration.Logger.info( this.loggerConfig, event, details, additionalFields );
