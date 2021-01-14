@@ -112,20 +112,6 @@
         assert.isFalse( RisePlayerConfiguration.Logger.warning.called );
         assert.isFalse( RisePlayerConfiguration.Logger.error.called );
       });
-
-      test( "should log when not in preview", () => {
-        preview = false;
-        logger.log(Logger.LOG_TYPE_INFO);
-
-        assert.isTrue(RisePlayerConfiguration.Logger.info.called);
-      });
-
-      test( "should not log in preview", () => {
-        preview = true;
-        logger.log(Logger.LOG_TYPE_INFO);
-
-        assert.isFalse(RisePlayerConfiguration.Logger.info.called);
-      });
     });
 
     suite( "getStorageFileFormat", () => {
