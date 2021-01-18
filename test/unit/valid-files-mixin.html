@@ -130,7 +130,8 @@
         validFiles._filterInvalidFileTypes( [ "test1.txt", "test2.zip", "test3.pdf"], [ "jpg,", "png"] );
 
         assert.equal( RisePlayerConfiguration.Logger.error.lastCall.args[1], "all-formats-invalid" );
-        assert.deepEqual( RisePlayerConfiguration.Logger.error.lastCall.args[2], {
+        assert.deepEqual( RisePlayerConfiguration.Logger.error.lastCall.args[2], { errorCode: "E000000039" });
+        assert.deepEqual( RisePlayerConfiguration.Logger.error.lastCall.args[3], {
           files: [ "test1.txt", "test2.zip", "test3.pdf" ],
           errorMessage: "All file formats are invalid"
         });

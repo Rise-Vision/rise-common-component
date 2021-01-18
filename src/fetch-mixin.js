@@ -159,7 +159,7 @@ export const FetchMixin = dedupingMixin( base => {
         const eventType = this.logTypeForFetchError( err );
         const event = `request ${ eventType }`;
 
-        super.log( eventType, event, details );
+        super.log( eventType, event, { errorCode: "E000000037" }, details );
       }
     }
 

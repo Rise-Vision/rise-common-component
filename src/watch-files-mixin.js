@@ -116,8 +116,24 @@ export const WatchFilesMixin = dedupingMixin( base => {
         fileInError = this._getManagedFileInError( filePath ),
         isFileNotFound = "NOEXIST" === message.status.toUpperCase() && !message.errorMessage,
         logLevel = isFileNotFound ? WatchFiles.LOG_TYPE_WARNING : WatchFiles.LOG_TYPE_ERROR,
-        errorName = isFileNotFound ? "file-not-found" :
-          ( message.errorMessage === "Insufficient disk space" ? "file-insufficient-disk-space-error" : "file-rls-error" );
+        errors = [ {
+          name: "file-not-found",
+          code: null
+        }, {
+          name: "file-insufficient-disk-space-error",
+          code: "E000000040"
+        }, {
+          name: "file-rls-error",
+          code: "E000000041"
+        } ];
+
+      let error;
+
+      if ( isFileNotFound ) {
+        error = errors[ 0 ];
+      } else {
+        error = message.errorMessage === "Insufficient disk space" ? errors[ 1 ] : errors[ 2 ];
+      }
 
       // prevent repetitive logging when component instance is receiving messages from other potential component instances watching same file
       // Note: to avoid using Lodash or Underscore library for just a .isEqual() function, taking a simple approach to object comparison with JSON.stringify()
@@ -137,10 +153,17 @@ export const WatchFilesMixin = dedupingMixin( base => {
         "Invalid response with status code [CODE]"
        */
 
-      this.log( logLevel, errorName, {
-        errorMessage: message.errorMessage,
-        errorDetail: message.errorDetail
-      }, { storage: super.getStorageData( filePath, fileUrl ) });
+      if ( logLevel === WatchFiles.LOG_TYPE_ERROR ) {
+        this.log( WatchFiles.LOG_TYPE_ERROR, error.name, { errorCode: error.code }, Object.assign({}, {
+          errorMessage: message.errorMessage,
+          errorDetail: message.errorDetail
+        }, { storage: super.getStorageData( filePath, fileUrl ) }));
+      } else {
+        this.log( WatchFiles.LOG_TYPE_WARNING, error.name, {
+          errorMessage: message.errorMessage,
+          errorDetail: message.errorDetail
+        }, { storage: super.getStorageData( filePath, fileUrl ) });
+      }
 
       if ( this.getManagedFile( filePath )) {
         // remove this file from the file list since there was a problem with its new version being provided

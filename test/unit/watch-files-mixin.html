@@ -102,11 +102,10 @@
           assert.deepEqual( watchFiles.log.lastCall.args, [
             "error",
             "file-rls-error",
+            { errorCode: "E000000041" },
             {
               errorMessage: "Network error",
-              errorDetail: "Detailed network error"
-            },
-            {
+              errorDetail: "Detailed network error",
               storage: {
                 configuration: "storage file",
                 file_form: "jpg",
@@ -131,11 +130,10 @@
           assert.deepEqual( watchFiles.log.lastCall.args, [
             "error",
             "file-insufficient-disk-space-error",
+            { errorCode: "E000000040" },
             {
               errorMessage: "Insufficient disk space",
-              errorDetail: ""
-            },
-            {
+              errorDetail: "",
               storage: {
                 configuration: "storage file",
                 file_form: "mp4",
