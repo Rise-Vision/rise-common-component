@@ -355,7 +355,7 @@
           assert.isTrue( fetchMixin._refresh.called );
           assert.isTrue( fetchMixin._refresh.calledWith(DEFAULT_COOLDOWN) );
 
-          assert.deepEqual( loggerMixin.log.getCall(0).args, ["error", "request error", {error: null}] );
+          assert.deepEqual( loggerMixin.log.getCall(0).args, ["error", "request error", { errorCode: "E000000037" }, {error: null}] );
 
         });
 
@@ -366,7 +366,7 @@
 
           fetchMixin._handleFetchError( new Error("error") );
 
-          assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "request error", {error: "error"}]);
+          assert.deepEqual(loggerMixin.log.getCall(0).args, ["error", "request error", { errorCode: "E000000037" }, {error: "error"}]);
 
           assert.isTrue( handleError.called );
         });
@@ -394,6 +394,7 @@
           assert.deepEqual(loggerMixin.log.getCall(0).args, [
             "error",
             "request error",
+            { errorCode: "E000000037" },
             { error: "error", status: 400 }
           ]);
           assert.isTrue( handleError.called );

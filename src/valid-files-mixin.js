@@ -56,13 +56,13 @@ export const ValidFilesMixin = dedupingMixin( base => {
       });
 
       invalidFiles.forEach( invalidFile => {
-        super.log( ValidFiles.LOG_TYPE_ERROR, "format-invalid", null, {
+        super.log( ValidFiles.LOG_TYPE_ERROR, "format-invalid", { errorCode: "E000000038" }, {
           storage: super.getStorageData( invalidFile )
         });
       });
 
       if ( files.length && !validFiles.length ) {
-        super.log( ValidFiles.LOG_TYPE_ERROR, "all-formats-invalid", {
+        super.log( ValidFiles.LOG_TYPE_ERROR, "all-formats-invalid", { errorCode: "E000000039" }, {
           files,
           errorMessage: "All file formats are invalid"
         });
