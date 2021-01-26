@@ -154,15 +154,15 @@ export const WatchFilesMixin = dedupingMixin( base => {
        */
 
       if ( logLevel === WatchFiles.LOG_TYPE_ERROR ) {
-        this.log( WatchFiles.LOG_TYPE_ERROR, error.name, { errorCode: error.code }, Object.assign({}, {
+        this.log( WatchFiles.LOG_TYPE_ERROR, error.name, { errorCode: error.code }, {
           errorMessage: message.errorMessage,
-          errorDetail: message.errorDetail
-        }, { storage: super.getStorageData( filePath, fileUrl ) }));
+          errorDetail: message.errorDetail,
+          storage: super.getStorageData( filePath, fileUrl ) });
       } else {
-        this.log( WatchFiles.LOG_TYPE_WARNING, error.name, {
+        this.log( WatchFiles.LOG_TYPE_WARNING, error.name, null, {
           errorMessage: message.errorMessage,
-          errorDetail: message.errorDetail
-        }, { storage: super.getStorageData( filePath, fileUrl ) });
+          errorDetail: message.errorDetail,
+          storage: super.getStorageData( filePath, fileUrl ) });
       }
 
       if ( this.getManagedFile( filePath )) {

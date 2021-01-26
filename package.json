@@ -1,6 +1,6 @@
 {
   "name": "rise-common-component",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "description": "Common utilities for Rise Vision Web components used in Template pages",
   "scripts": {
     "preinstall": "npx npm-force-resolutions || true",
