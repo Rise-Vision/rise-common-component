@@ -170,7 +170,7 @@ export const CacheMixin = dedupingMixin( base => {
         return this._getCache().then( cache => {
           return cache.put( this.getCacheResponseKey( response ) || url, response );
         }).catch( err => {
-          super.log( Cache.LOG_TYPE_WARNING, "cache put failed", { url: response.url || url, err }, Cache.LOG_AT_MOST_ONCE_PER_DAY );
+          super.log( Cache.LOG_TYPE_WARNING, "cache put failed", null, Object.assign({ url: response.url || url, err }, Cache.LOG_AT_MOST_ONCE_PER_DAY ));
         });
       } else {
         return Promise.resolve();

@@ -142,7 +142,7 @@ export const FetchMixin = dedupingMixin( base => {
     _logData( cached ) {
       if ( this._logDataReceived ) {
         this._logDataReceived = false;
-        super.log( Fetch.LOG_TYPE_INFO, "data received", { cached });
+        super.log( Fetch.LOG_TYPE_INFO, "data received", null, { cached });
       }
     }
 
@@ -154,7 +154,7 @@ export const FetchMixin = dedupingMixin( base => {
       const details = this._eventDetailFor( err );
 
       if ( err && err.isOffline ) {
-        super.log( Fetch.LOG_TYPE_WARNING, "client offline", details );
+        super.log( Fetch.LOG_TYPE_WARNING, "client offline", null, details );
       } else {
         const eventType = this.logTypeForFetchError( err );
         const event = `request ${ eventType }`;

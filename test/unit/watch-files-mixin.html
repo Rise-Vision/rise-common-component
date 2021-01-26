@@ -168,11 +168,10 @@
           assert.deepEqual( watchFiles.log.lastCall.args, [
             "warning",
             "file-not-found",
+            null,
             {
               errorMessage: undefined,
-              errorDetail: undefined
-            },
-            {
+              errorDetail: undefined,
               storage: {
                 configuration: "storage file",
                 file_form: "mp4",

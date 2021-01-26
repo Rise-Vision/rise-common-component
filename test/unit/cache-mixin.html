@@ -217,13 +217,13 @@
       });
 
       test("should handle failure to put cache", done => {
-        cachesOpen.put.rejects();
+        cachesOpen.put.throws({ exception: "test" });
         var res = {
           url: "key3",
           data: {}
         }
         cache.putCache( res ).then(() => {
-          assert.isTrue( logger.log.called );
+          assert.isTrue( logger.log.calledWith("warning", "cache put failed", null, {url: "key3", err: { exception: "test" }, "_logAtMostOncePerDay": true}));
 
           done();
         });
