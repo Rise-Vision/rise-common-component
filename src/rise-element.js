@@ -43,6 +43,9 @@ export const RiseElementMixin = dedupingMixin( base => {
       static get EVENT_CLIENT_OFFLINE() {
         return "client-offline"
       }
+      static get EVENT_READY() {
+        return "rise-components-ready";
+      }
       static get EVENT_RISE_PRESENTATION_PLAY() {
         return "rise-presentation-play"
       }
@@ -123,8 +126,16 @@ export const RiseElementMixin = dedupingMixin( base => {
         this.dispatchEvent( event );
       }
 
-      _handleStart() {
+      _sendReadyEvent() {
+        this._sendEvent( RiseElement.EVENT_READY );
+      }
+
+      _handleStart( event, skipReady ) {
         super.log( riseElement.LOG_TYPE_INFO, "start received" );
+
+        if ( !skipReady ) {
+          this._sendReadyEvent();
+        }
       }
 
       _handleRisePresentationPlay() {
