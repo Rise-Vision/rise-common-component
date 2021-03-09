@@ -91,13 +91,11 @@ export const RiseElementMixin = dedupingMixin( base => {
           });
         }
 
-        if ( RisePlayerConfiguration.isConfigured()) {
-          this._init();
-        } else {
-          const init = () => this._init();
+        this._init();
 
-          window.addEventListener( "rise-components-ready", init, { once: true });
-        }
+        RisePlayerConfiguration.Helpers.getComponentAsync( this );
+
+        this._sendEvent( RiseElement.EVENT_CONFIGURED );
       }
 
       isOffline() {
@@ -115,8 +113,6 @@ export const RiseElementMixin = dedupingMixin( base => {
         this.addEventListener( RiseElement.EVENT_START, this._handleStart, { once: true });
         this.addEventListener( RiseElement.EVENT_RISE_PRESENTATION_PLAY, this._handleRisePresentationPlay );
         this.addEventListener( RiseElement.EVENT_RISE_PRESENTATION_STOP, this._handleRisePresentationStop );
-
-        this._sendEvent( RiseElement.EVENT_CONFIGURED );
       }
 
       _sendEvent( eventName, detail = {}) {

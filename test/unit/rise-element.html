@@ -14,7 +14,9 @@
 
   <script type="text/javascript">
     RisePlayerConfiguration = {
-      isConfigured: () => false,
+      Helpers: {
+        getComponentAsync: () => {}
+      },
       Viewer: { }
     };
   </script>
@@ -42,10 +44,10 @@
 
       sinon.stub(logger, "initLogger");
       sinon.stub(logger, "log");
+      sinon.stub(RisePlayerConfiguration.Helpers, "getComponentAsync");
     });
 
     teardown(()=>{
-      RisePlayerConfiguration.isConfigured = () => false;
       sinon.restore();
     });
 
@@ -66,31 +68,23 @@
     });
 
     suite( "ready", () => {
-      let stub;
+      test( "should call init, register component and call configured", () => {
+        sinon.stub( element, '_init');
+        sinon.stub(element, "dispatchEvent");
 
-      setup(()=>{
-        stub = sinon.stub( window, "addEventListener" );
-      });
-
-      test( "should listen for rise-components-ready and call init", () => {
         element.ready();
-        assert.isTrue( stub.calledWith('rise-components-ready') );
+
+        assert.isTrue( element._init.calledOnce );
+
+        assert.isTrue( RisePlayerConfiguration.Helpers.getComponentAsync.calledWith(element) );
+
+        assert.equal(element.dispatchEvent.getCall(0).args[0].type, "configured");
       });
 
       test( "should init mixins ", () => {
         element.ready();
 
         assert.isTrue( logger.initLogger.called );
-      });
-
-      test( "should call _init() if  RisePlayerConfiguration is configured", () => {
-        sinon.stub( element, '_init');
-
-        RisePlayerConfiguration.isConfigured = () => true ;
-        element.ready();
-
-        assert.isTrue( element._init.calledOnce );
-        assert.isFalse( stub.calledTwice );
       });
 
       test( "should initiate endpoint application heartbeats", () => {
@@ -148,13 +142,6 @@ sinon.stub();
 
         element._init();
         assert.isTrue(element.addEventListener.calledWith( "start" ));
-      });
-
-      test( "should raise 'configured' event", () => {
-        sinon.stub(element, "dispatchEvent");
-
-        element._init();
-        assert.equal(element.dispatchEvent.getCall(0).args[0].type, "configured");
       });
     });
 
