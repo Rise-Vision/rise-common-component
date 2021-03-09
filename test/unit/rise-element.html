@@ -145,6 +145,24 @@ sinon.stub();
       });
     });
 
+    suite( "_handleStart", () => {
+      test( "should send ready event on start", () => {
+        sinon.stub(element, "_sendEvent");
+
+        element._handleStart();
+
+        assert.isTrue(element._sendEvent.calledWith("rise-components-ready"));
+      });
+
+      test( "should not send ready event if skipReady is true", () => {
+        sinon.stub(element, "_sendEvent");
+
+        element._handleStart(null, true);
+
+        assert.isFalse(element._sendEvent.calledWith("rise-components-ready"));
+      });
+    });
+
     suite( "'start/play/stop' event", () => {
 
       test( "should start", () => {
