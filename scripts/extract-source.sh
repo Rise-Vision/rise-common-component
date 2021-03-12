@@ -17,3 +17,5 @@ then
 
   exit 1
 fi
+
+sed 's|../shared_bundle_1.js|https://widgets.risevision.com/stable/common/polymer-bundle.min.js|' $COMPONENT_SOURCE > dist/$1-bundle.min.js
