@@ -589,27 +589,27 @@
       });
     });
 
-    suite( "_eventDetailFor", () => {
+    suite( "eventDetailFor", () => {
       test( "should get event detail for undefined event", () => {
-        const detail = fetchMixin._eventDetailFor();
+        const detail = fetchMixin.eventDetailFor();
 
         assert.deepEqual( detail, { error: null } );
       });
 
       test( "should get event detail for event with no message", () => {
-        const detail = fetchMixin._eventDetailFor({});
+        const detail = fetchMixin.eventDetailFor({});
 
         assert.deepEqual( detail, { error: null } );
       });
 
       test( "should get event detail for event with message", () => {
-        const detail = fetchMixin._eventDetailFor({ message: "FAIL" });
+        const detail = fetchMixin.eventDetailFor({ message: "FAIL" });
 
         assert.deepEqual( detail, { error: "FAIL" } );
       });
 
       test( "should get event detail for event with message and HTTP status code", () => {
-        const detail = fetchMixin._eventDetailFor({
+        const detail = fetchMixin.eventDetailFor({
           message: "FAIL",
           status: 403
         });
@@ -618,7 +618,7 @@
       });
 
       test( "should get event detail for event with message and response text", () => {
-        const detail = fetchMixin._eventDetailFor({
+        const detail = fetchMixin.eventDetailFor({
           message: "FAIL",
           responseText: "username not found"
         });

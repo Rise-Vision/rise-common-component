@@ -45,7 +45,7 @@
       });
 
       test( "should return default log type for any error", () => {
-        element._logFetchError();
+        element.logFetchError();
 
         assert.isTrue(loggerMixin.log.calledOnce);
         assert.equal(loggerMixin.log.lastCall.args[0], "error");
@@ -69,7 +69,7 @@
       });
 
       test( "should return error log type", () => {
-        element._logFetchError({ status: 500 });
+        element.logFetchError({ status: 500 });
 
         assert.isTrue(loggerMixin.log.calledOnce);
         assert.equal(loggerMixin.log.lastCall.args[0], "error");
@@ -77,7 +77,7 @@
       });
 
       test( "should return warning log type", () => {
-        element._logFetchError({ status: 400 });
+        element.logFetchError({ status: 400 });
 
         assert.isTrue(loggerMixin.log.calledOnce);
         assert.equal(loggerMixin.log.lastCall.args[0], "warning");
