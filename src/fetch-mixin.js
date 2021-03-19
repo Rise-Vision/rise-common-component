@@ -150,8 +150,8 @@ export const FetchMixin = dedupingMixin( base => {
       return Fetch.LOG_TYPE_ERROR;
     }
 
-    _logFetchError( err ) {
-      const details = this._eventDetailFor( err );
+    logFetchError( err ) {
+      const details = this.eventDetailFor( err );
 
       if ( err && err.isOffline ) {
         super.log( Fetch.LOG_TYPE_WARNING, "client offline", null, details );
@@ -171,7 +171,7 @@ export const FetchMixin = dedupingMixin( base => {
       } else {
         this._requestRetryCount = 0;
 
-        this._logFetchError( err );
+        this.logFetchError( err );
 
         this.processError && this.processError( err );
 
@@ -179,7 +179,7 @@ export const FetchMixin = dedupingMixin( base => {
       }
     }
 
-    _eventDetailFor( error ) {
+    eventDetailFor( error ) {
       const detail = { error: error && error.message ? error.message : null };
 
       if ( error && error.status ) {
