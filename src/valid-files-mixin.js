@@ -61,13 +61,6 @@ export const ValidFilesMixin = dedupingMixin( base => {
         });
       });
 
-      if ( files.length && !validFiles.length ) {
-        super.log( ValidFiles.LOG_TYPE_ERROR, "all-formats-invalid", { errorCode: "E000000039" }, {
-          files,
-          errorMessage: "All file formats are invalid"
-        });
-      }
-
       return { validFiles, invalidFiles };
     }
 
