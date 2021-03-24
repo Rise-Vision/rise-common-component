@@ -115,16 +115,15 @@ export const WatchFilesMixin = dedupingMixin( base => {
         details = { filePath, errorMessage: message.errorMessage, errorDetail: message.errorDetail },
         fileInError = this._getManagedFileInError( filePath ),
         isFileNotFound = "NOEXIST" === message.status.toUpperCase() && !message.errorMessage,
-        logLevel = isFileNotFound ? WatchFiles.LOG_TYPE_WARNING : WatchFiles.LOG_TYPE_ERROR,
         errors = [ {
           name: "file-not-found",
-          code: null
+          code: "E000000014"
         }, {
           name: "file-insufficient-disk-space-error",
           code: "E000000040"
         }, {
           name: "file-rls-error",
-          code: "E000000041"
+          code: "E000000027"
         } ];
 
       let error;
@@ -153,17 +152,10 @@ export const WatchFilesMixin = dedupingMixin( base => {
         "Invalid response with status code [CODE]"
        */
 
-      if ( logLevel === WatchFiles.LOG_TYPE_ERROR ) {
-        this.log( WatchFiles.LOG_TYPE_ERROR, error.name, { errorCode: error.code }, {
-          errorMessage: message.errorMessage,
-          errorDetail: message.errorDetail,
-          storage: super.getStorageData( filePath, fileUrl ) });
-      } else {
-        this.log( WatchFiles.LOG_TYPE_WARNING, error.name, null, {
-          errorMessage: message.errorMessage,
-          errorDetail: message.errorDetail,
-          storage: super.getStorageData( filePath, fileUrl ) });
-      }
+      this.log( WatchFiles.LOG_TYPE_ERROR, error.name, { errorCode: error.code }, {
+        errorMessage: message.errorMessage,
+        errorDetail: message.errorDetail,
+        storage: super.getStorageData( filePath, fileUrl ) });
 
       if ( this.getManagedFile( filePath )) {
         // remove this file from the file list since there was a problem with its new version being provided
