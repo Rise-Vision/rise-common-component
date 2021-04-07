@@ -29,6 +29,11 @@
       watchSingleFile: (file, handler) => {
         handler({ status: "CURRENT", filePath: file, fileUrl: sampleUrl( file ) });
       }
+    },
+    ContentSentinel: {
+      watchSingleFile: (file, handler) => {
+        handler({ status: "CURRENT", filePath: file });
+      }
     }
   };
 </script>
@@ -72,7 +77,7 @@
       } );
 
       test( "should handle adding files", () => {
-        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ], WatchFiles.WATCH_TYPE_RLS );
 
         assert.equal( watchFiles.watchedFileAddedCallback.callCount, 2 );
         assert.equal ( watchFiles.managedFiles.length, 2);
@@ -88,7 +93,7 @@
         } );
 
         test( "should handle file errors", () => {
-          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ], WatchFiles.WATCH_TYPE_RLS );
 
           watchFiles._handleSingleFileUpdate( {
             filePath: "foo.jpg",
@@ -145,7 +150,7 @@
         } );
 
         test( "should handle deleting files", () => {
-          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ], WatchFiles.WATCH_TYPE_RLS );
 
           watchFiles._handleSingleFileUpdate( {
             filePath: "foo.jpg",
@@ -209,7 +214,7 @@
           }, delays[file]) ;
         } );
 
-        watchFiles.startWatch( [ "a.jpg", "b.jpg", "c.jpg" ] );
+        watchFiles.startWatch( [ "a.jpg", "b.jpg", "c.jpg" ], WatchFiles.WATCH_TYPE_RLS );
 
         setTimeout( () => {
           const addedCalls = watchFiles.watchedFileAddedCallback.getCalls();
@@ -232,32 +237,55 @@
       test( "should initialize properties", () => {
         const files = [ "a.jpg", "b.jpg" ];
 
-        watchFiles.startWatch( files );
+        watchFiles.startWatch( files, WatchFiles.WATCH_TYPE_RLS );
 
         assert.deepEqual( watchFiles._filesList, files );
         assert.isTrue( watchFiles._watchInitiated );
+        assert.equal( watchFiles._watchType, WatchFiles.WATCH_TYPE_RLS );
+        assert.equal( watchFiles.managedFiles.length, 2);
+
+        watchFiles.stopWatch();
+
+        watchFiles.startWatch( files, WatchFiles.WATCH_TYPE_SENTINEL );
+        assert.deepEqual( watchFiles._filesList, files );
+        assert.isTrue( watchFiles._watchInitiated );
+        assert.equal( watchFiles._watchType, WatchFiles.WATCH_TYPE_SENTINEL );
         assert.equal( watchFiles.managedFiles.length, 2);
       } );
 
       test( "should not reinitialize if watch has already been initiated", () => {
         let managedFiles;
 
-        watchFiles.startWatch( [ "a.jpg", "b.jpg" ] );
+        watchFiles.startWatch( [ "a.jpg", "b.jpg" ], WatchFiles.WATCH_TYPE_RLS );
         managedFiles = watchFiles.managedFiles.slice();
-        watchFiles.startWatch( [ "c.jpg", "d.jpg" ] );
+        watchFiles.startWatch( [ "c.jpg", "d.jpg" ], WatchFiles.WATCH_TYPE_RLS );
 
         assert.deepEqual( watchFiles.managedFiles, managedFiles);
       });
+
+      test( "should not execute if params invalid", () => {
+        const files = [ "a.jpg", "b.jpg" ];
+
+        watchFiles.startWatch();
+        assert.isFalse( watchFiles._watchInitiated );
+
+        watchFiles.startWatch( files );
+        assert.isFalse( watchFiles._watchInitiated );
+
+        watchFiles.startWatch( files, "test" );
+        assert.isFalse( watchFiles._watchInitiated );
+      } )
     } );
 
     suite( "stopWatch", () => {
       test( "should reset properties", () => {
-        watchFiles.startWatch( [ "a.jpg", "b.jpg" ] );
+        watchFiles.startWatch( [ "a.jpg", "b.jpg" ], WatchFiles.WATCH_TYPE_RLS );
         watchFiles.stopWatch();
 
         assert.isFalse( watchFiles._watchInitiated );
         assert.isEmpty( watchFiles.managedFiles );
         assert.isEmpty( watchFiles._filesList );
+        assert.isNull( watchFiles._watchType );
       } );
     } );
   } );

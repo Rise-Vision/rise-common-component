@@ -9,6 +9,14 @@ export const WatchFilesMixin = dedupingMixin( base => {
   };
 
   class WatchFiles extends LoggerMixin( base ) {
+    static get WATCH_TYPE_RLS() {
+      return "rise-local-storage";
+    }
+
+    static get WATCH_TYPE_SENTINEL() {
+      return "rise-content-sentinel";
+    }
+
     constructor() {
       super();
 
@@ -18,6 +26,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
       this._watchInitiated = false;
       this._managedFilesInError = [];
       this._filesList = [];
+      this._watchType = null;
     }
 
     initWatchFiles( watchFilesConfig ) {
@@ -89,22 +98,34 @@ export const WatchFilesMixin = dedupingMixin( base => {
       return this.managedFiles.find( file => file.filePath === filePath );
     }
 
-    startWatch( filesList ) {
+    startWatch( filesList, watchType ) {
+      if ( !filesList || !watchType ) {
+        return;
+      }
+
+      if ( ![ WatchFiles.WATCH_TYPE_RLS, WatchFiles.WATCH_TYPE_SENTINEL ].includes( watchType )) {
+        return;
+      }
+
       if ( !this._watchInitiated ) {
+        const watchFn = watchType === WatchFiles.WATCH_TYPE_RLS ? RisePlayerConfiguration.LocalStorage.watchSingleFile : RisePlayerConfiguration.ContentSentinel.watchSingleFile;
+
         this._filesList = filesList.slice( 0 );
 
         this._filesList.forEach( file => {
-          RisePlayerConfiguration.LocalStorage.watchSingleFile(
+          watchFn(
             file, message => this._handleSingleFileUpdate( message )
           );
         });
 
+        this._watchType = watchType;
         this._watchInitiated = true;
       }
     }
 
     stopWatch() {
       this._watchInitiated = false;
+      this._watchType = null;
       this.managedFiles = [];
       this._managedFilesInError = [];
       this._filesList = [];
