@@ -111,8 +111,6 @@ export const WatchFilesMixin = dedupingMixin( base => {
     }
 
     startWatch( filesList ) {
-
-
       if ( !filesList ) {
         return Promise.reject();
       }
@@ -135,11 +133,9 @@ export const WatchFilesMixin = dedupingMixin( base => {
         });
 
         this._watchInitiated = true;
-
-        return Promise.resolve( this._watchType );
-      } else {
-        return Promise.resolve( this._watchType );
       }
+
+      return Promise.resolve( this._watchType );
     }
 
     stopWatch() {
