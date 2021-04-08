@@ -94,21 +94,37 @@ export const WatchFilesMixin = dedupingMixin( base => {
       return this._managedFilesInError.find( file => file.filePath === filePath );
     }
 
+    _getWatchType() {
+      if ( RisePlayerConfiguration.Helpers.useContentSentinel()) {
+        return WatchFiles.WATCH_TYPE_SENTINEL;
+      }
+
+      if ( RisePlayerConfiguration.Helpers.isDisplay() && RisePlayerConfiguration.LocalMessaging.isConnected()) {
+        return WatchFiles.WATCH_TYPE_RLS;
+      }
+
+      return null;
+    }
+
     getManagedFile( filePath ) {
       return this.managedFiles.find( file => file.filePath === filePath );
     }
 
-    startWatch( filesList, watchType ) {
-      if ( !filesList || !watchType ) {
-        return;
-      }
+    startWatch( filesList ) {
 
-      if ( ![ WatchFiles.WATCH_TYPE_RLS, WatchFiles.WATCH_TYPE_SENTINEL ].includes( watchType )) {
-        return;
+
+      if ( !filesList ) {
+        return Promise.reject();
       }
 
       if ( !this._watchInitiated ) {
-        const watchFn = watchType === WatchFiles.WATCH_TYPE_RLS ? RisePlayerConfiguration.LocalStorage.watchSingleFile : RisePlayerConfiguration.ContentSentinel.watchSingleFile;
+        this._watchType = this._getWatchType();
+
+        if ( !this._watchType ) {
+          return Promise.reject();
+        }
+
+        const watchFn = this._watchType === WatchFiles.WATCH_TYPE_RLS ? RisePlayerConfiguration.LocalStorage.watchSingleFile : RisePlayerConfiguration.ContentSentinel.watchSingleFile;
 
         this._filesList = filesList.slice( 0 );
 
@@ -118,8 +134,11 @@ export const WatchFilesMixin = dedupingMixin( base => {
           );
         });
 
-        this._watchType = watchType;
         this._watchInitiated = true;
+
+        return Promise.resolve( this._watchType );
+      } else {
+        return Promise.resolve( this._watchType );
       }
     }
 
