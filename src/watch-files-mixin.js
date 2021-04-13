@@ -9,6 +9,14 @@ export const WatchFilesMixin = dedupingMixin( base => {
   };
 
   class WatchFiles extends LoggerMixin( base ) {
+    static get WATCH_TYPE_RLS() {
+      return "rise-local-storage";
+    }
+
+    static get WATCH_TYPE_SENTINEL() {
+      return "rise-content-sentinel";
+    }
+
     constructor() {
       super();
 
@@ -18,6 +26,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
       this._watchInitiated = false;
       this._managedFilesInError = [];
       this._filesList = [];
+      this._watchType = null;
     }
 
     initWatchFiles( watchFilesConfig ) {
@@ -85,26 +94,53 @@ export const WatchFilesMixin = dedupingMixin( base => {
       return this._managedFilesInError.find( file => file.filePath === filePath );
     }
 
+    _getWatchType() {
+      if ( RisePlayerConfiguration.Helpers.useContentSentinel()) {
+        return WatchFiles.WATCH_TYPE_SENTINEL;
+      }
+
+      if ( RisePlayerConfiguration.Helpers.isDisplay() && RisePlayerConfiguration.LocalMessaging.isConnected()) {
+        return WatchFiles.WATCH_TYPE_RLS;
+      }
+
+      return null;
+    }
+
     getManagedFile( filePath ) {
       return this.managedFiles.find( file => file.filePath === filePath );
     }
 
     startWatch( filesList ) {
+      if ( !filesList ) {
+        return Promise.reject();
+      }
+
       if ( !this._watchInitiated ) {
+        this._watchType = this._getWatchType();
+
+        if ( !this._watchType ) {
+          return Promise.reject();
+        }
+
+        const watchFn = this._watchType === WatchFiles.WATCH_TYPE_RLS ? RisePlayerConfiguration.LocalStorage.watchSingleFile : RisePlayerConfiguration.ContentSentinel.watchSingleFile;
+
         this._filesList = filesList.slice( 0 );
 
         this._filesList.forEach( file => {
-          RisePlayerConfiguration.LocalStorage.watchSingleFile(
+          watchFn(
             file, message => this._handleSingleFileUpdate( message )
           );
         });
 
         this._watchInitiated = true;
       }
+
+      return Promise.resolve( this._watchType );
     }
 
     stopWatch() {
       this._watchInitiated = false;
+      this._watchType = null;
       this.managedFiles = [];
       this._managedFilesInError = [];
       this._filesList = [];

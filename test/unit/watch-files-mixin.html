@@ -29,6 +29,18 @@
       watchSingleFile: (file, handler) => {
         handler({ status: "CURRENT", filePath: file, fileUrl: sampleUrl( file ) });
       }
+    },
+    ContentSentinel: {
+      watchSingleFile: (file, handler) => {
+        handler({ status: "CURRENT", filePath: file });
+      }
+    },
+    Helpers: {
+      useContentSentinel: () => false,
+      isDisplay: () => true
+    },
+    LocalMessaging: {
+      isConnected: () => true
     }
   };
 </script>
@@ -71,11 +83,12 @@
         watchFiles.watchedFileErrorCallback.restore();
       } );
 
-      test( "should handle adding files", () => {
-        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
-
-        assert.equal( watchFiles.watchedFileAddedCallback.callCount, 2 );
-        assert.equal ( watchFiles.managedFiles.length, 2);
+      test( "should handle adding files", (done) => {
+        watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] ).then(() => {
+          assert.equal( watchFiles.watchedFileAddedCallback.callCount, 2 );
+          assert.equal ( watchFiles.managedFiles.length, 2);
+          done();
+        });
       } );
 
       suite( "handle errors", () => {
@@ -87,35 +100,37 @@
           watchFiles.log.restore();
         } );
 
-        test( "should handle file errors", () => {
-          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
-
-          watchFiles._handleSingleFileUpdate( {
-            filePath: "foo.jpg",
-            fileUrl: sampleUrl( "foo.jpg" ),
-            status: "file-error",
-            errorMessage: "Network error",
-            errorDetail: "Detailed network error"
-          } );
-
-          assert.equal( watchFiles.watchedFileErrorCallback.callCount, 1 );
-          assert.deepEqual( watchFiles.log.lastCall.args, [
-            "error",
-            "file-rls-error",
-            { errorCode: "E000000027" },
-            {
+        test( "should handle file errors", (done) => {
+          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] ).then(() => {
+            watchFiles._handleSingleFileUpdate( {
+              filePath: "foo.jpg",
+              fileUrl: sampleUrl( "foo.jpg" ),
+              status: "file-error",
               errorMessage: "Network error",
-              errorDetail: "Detailed network error",
-              storage: {
-                configuration: "storage file",
-                file_form: "jpg",
-                file_path: "foo.jpg",
-                local_url: sampleUrl( "foo.jpg" )
+              errorDetail: "Detailed network error"
+            } );
+
+            assert.equal( watchFiles.watchedFileErrorCallback.callCount, 1 );
+            assert.deepEqual( watchFiles.log.lastCall.args, [
+              "error",
+              "file-rls-error",
+              { errorCode: "E000000027" },
+              {
+                errorMessage: "Network error",
+                errorDetail: "Detailed network error",
+                storage: {
+                  configuration: "storage file",
+                  file_form: "jpg",
+                  file_path: "foo.jpg",
+                  local_url: sampleUrl( "foo.jpg" )
+                }
               }
-            }
-          ]);
-          assert.equal (watchFiles.managedFiles.length, 1 );
-          assert.equal (watchFiles._managedFilesInError.length, 1 );
+            ]);
+            assert.equal (watchFiles.managedFiles.length, 1 );
+            assert.equal (watchFiles._managedFilesInError.length, 1 );
+
+            done();
+          });
         } );
 
         test( "should handle insufficient disk space errors", () => {
@@ -144,18 +159,20 @@
           ]);
         } );
 
-        test( "should handle deleting files", () => {
-          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] );
+        test( "should handle deleting files", (done) => {
+          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] ).then(() => {
+            watchFiles._handleSingleFileUpdate( {
+              filePath: "foo.jpg",
+              fileUrl: sampleUrl( "foo.jpg" ),
+              status: "deleted",
+            } );
 
-          watchFiles._handleSingleFileUpdate( {
-            filePath: "foo.jpg",
-            fileUrl: sampleUrl( "foo.jpg" ),
-            status: "deleted",
-          } );
+            assert.equal( watchFiles.watchedFileDeletedCallback.callCount, 1 );
+            assert.equal( watchFiles.managedFiles.length, 1);
+            assert.equal( watchFiles._managedFilesInError.length, 0);
 
-          assert.equal( watchFiles.watchedFileDeletedCallback.callCount, 1 );
-          assert.equal( watchFiles.managedFiles.length, 1);
-          assert.equal( watchFiles._managedFilesInError.length, 0);
+            done();
+          });
         } );
 
         test( "should handle deleted file error", () => {
@@ -209,55 +226,98 @@
           }, delays[file]) ;
         } );
 
-        watchFiles.startWatch( [ "a.jpg", "b.jpg", "c.jpg" ] );
+        watchFiles.startWatch( [ "a.jpg", "b.jpg", "c.jpg" ] ).then(() => {
+          setTimeout( () => {
+            const addedCalls = watchFiles.watchedFileAddedCallback.getCalls();
 
-        setTimeout( () => {
-          const addedCalls = watchFiles.watchedFileAddedCallback.getCalls();
+            assert.isTrue( addedCalls[0].calledWithExactly( { filePath: "c.jpg" } ) );
+            assert.isTrue( addedCalls[1].calledWithExactly( { filePath: "a.jpg" } ) );
+            assert.isTrue( addedCalls[2].calledWithExactly( { filePath: "b.jpg" } ) );
 
-          assert.isTrue( addedCalls[0].calledWithExactly( { filePath: "c.jpg" } ) );
-          assert.isTrue( addedCalls[1].calledWithExactly( { filePath: "a.jpg" } ) );
-          assert.isTrue( addedCalls[2].calledWithExactly( { filePath: "b.jpg" } ) );
+            assert.equal( watchFiles.getManagedFile( "a.jpg" ).order, 0);
+            assert.equal( watchFiles.getManagedFile( "b.jpg" ).order, 1);
+            assert.equal( watchFiles.getManagedFile( "c.jpg" ).order, 2);
 
-          assert.equal( watchFiles.getManagedFile( "a.jpg" ).order, 0);
-          assert.equal( watchFiles.getManagedFile( "b.jpg" ).order, 1);
-          assert.equal( watchFiles.getManagedFile( "c.jpg" ).order, 2);
-
-          RisePlayerConfiguration.LocalStorage.watchSingleFile.restore();
-          done();
-        }, maxDelay );
+            RisePlayerConfiguration.LocalStorage.watchSingleFile.restore();
+            done();
+          }, maxDelay );
+        });
       } );
     } );
 
     suite( "startWatch", () => {
-      test( "should initialize properties", () => {
+      test( "should initialize properties and resolve with watch type", (done) => {
         const files = [ "a.jpg", "b.jpg" ];
 
-        watchFiles.startWatch( files );
+        watchFiles.startWatch( files ).then((watchType) => {
+          assert.deepEqual( watchFiles._filesList, files );
+          assert.isTrue( watchFiles._watchInitiated );
+          assert.equal( watchType, WatchFiles.WATCH_TYPE_RLS );
+          assert.equal( watchFiles.managedFiles.length, 2);
 
-        assert.deepEqual( watchFiles._filesList, files );
-        assert.isTrue( watchFiles._watchInitiated );
-        assert.equal( watchFiles.managedFiles.length, 2);
+          watchFiles.stopWatch();
+
+          RisePlayerConfiguration.Helpers.useContentSentinel = () => { return true; }
+
+          watchFiles.startWatch( files ).then((watchType) => {
+            assert.deepEqual( watchFiles._filesList, files );
+            assert.isTrue( watchFiles._watchInitiated );
+            assert.equal( watchType, WatchFiles.WATCH_TYPE_SENTINEL );
+            assert.equal( watchFiles.managedFiles.length, 2);
+
+            RisePlayerConfiguration.Helpers.useContentSentinel = () => { return false; }
+
+            done();
+          });
+
+        });
       } );
 
-      test( "should not reinitialize if watch has already been initiated", () => {
+      test( "should not reinitialize if watch has already been initiated", (done) => {
         let managedFiles;
 
-        watchFiles.startWatch( [ "a.jpg", "b.jpg" ] );
-        managedFiles = watchFiles.managedFiles.slice();
-        watchFiles.startWatch( [ "c.jpg", "d.jpg" ] );
-
-        assert.deepEqual( watchFiles.managedFiles, managedFiles);
+        watchFiles.startWatch( [ "a.jpg", "b.jpg" ] ).then(() => {
+          managedFiles = watchFiles.managedFiles.slice();
+          watchFiles.startWatch( [ "c.jpg", "d.jpg" ] ).then(() => {
+            assert.deepEqual( watchFiles.managedFiles, managedFiles);
+            done();
+          });
+        });
       });
+
+      test( "should reject if params invalid", (done) => {
+        watchFiles.startWatch().catch(() => {
+          assert.isFalse( watchFiles._watchInitiated );
+          done();
+        });
+      } );
+
+      test( "should reject if no watch type can be used", (done) => {
+        const files = [ "a.jpg", "b.jpg" ];
+
+        RisePlayerConfiguration.LocalMessaging.isConnected = () => { return false; }
+
+        watchFiles.startWatch( files ).catch(() => {
+          assert.isFalse( watchFiles._watchInitiated );
+
+          RisePlayerConfiguration.LocalMessaging.isConnected = () => { return true; }
+          done();
+        });
+      } );
     } );
 
     suite( "stopWatch", () => {
-      test( "should reset properties", () => {
-        watchFiles.startWatch( [ "a.jpg", "b.jpg" ] );
-        watchFiles.stopWatch();
+      test( "should reset properties", (done) => {
+        watchFiles.startWatch( [ "a.jpg", "b.jpg" ] ).then(() => {
+          watchFiles.stopWatch();
 
-        assert.isFalse( watchFiles._watchInitiated );
-        assert.isEmpty( watchFiles.managedFiles );
-        assert.isEmpty( watchFiles._filesList );
+          assert.isFalse( watchFiles._watchInitiated );
+          assert.isEmpty( watchFiles.managedFiles );
+          assert.isEmpty( watchFiles._filesList );
+          assert.isNull( watchFiles._watchType );
+
+          done();
+        });
       } );
     } );
   } );
