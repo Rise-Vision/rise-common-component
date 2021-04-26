@@ -160,14 +160,19 @@ export const WatchFilesMixin = dedupingMixin( base => {
         }, {
           name: "file-rls-error",
           code: "E000000027"
+        }, {
+          name: "file-content-sentinel-error",
+          code: "E000000215"
         } ];
 
       let error;
 
       if ( isFileNotFound ) {
         error = errors[ 0 ];
+      } else if ( message.errorMessage && message.errorMessage.toLowerCase().includes( "insufficient disk space" )) {
+        error = errors[ 1 ];
       } else {
-        error = message.errorMessage === "Insufficient disk space" ? errors[ 1 ] : errors[ 2 ];
+        error = this._watchType === WatchFiles.WATCH_TYPE_RLS ? errors[ 2 ] : errors[ 3 ];
       }
 
       // prevent repetitive logging when component instance is receiving messages from other potential component instances watching same file
@@ -189,6 +194,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
        */
 
       this.log( WatchFiles.LOG_TYPE_ERROR, error.name, { errorCode: error.code }, {
+        watchType: this._watchType,
         errorMessage: message.errorMessage,
         errorDetail: message.errorDetail,
         storage: super.getStorageData( filePath, fileUrl ) });
