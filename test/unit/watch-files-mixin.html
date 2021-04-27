@@ -100,7 +100,7 @@
           watchFiles.log.restore();
         } );
 
-        test( "should handle file errors", (done) => {
+        test( "should handle RLS file error", (done) => {
           watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] ).then(() => {
             watchFiles._handleSingleFileUpdate( {
               filePath: "foo.jpg",
@@ -116,6 +116,7 @@
               "file-rls-error",
               { errorCode: "E000000027" },
               {
+                watchType: "rise-local-storage",
                 errorMessage: "Network error",
                 errorDetail: "Detailed network error",
                 storage: {
@@ -128,6 +129,44 @@
             ]);
             assert.equal (watchFiles.managedFiles.length, 1 );
             assert.equal (watchFiles._managedFilesInError.length, 1 );
+
+            done();
+          });
+        } );
+
+        test( "should handle Content Sentinel file error", (done) => {
+          RisePlayerConfiguration.Helpers.useContentSentinel = () => { return true; }
+
+          watchFiles.startWatch( [ "foo.jpg", "bar.jpg" ] ).then(() => {
+            watchFiles._handleSingleFileUpdate( {
+              filePath: "foo.jpg",
+              fileUrl: sampleUrl( "foo.jpg" ),
+              status: "file-error",
+              errorMessage: "Network error",
+              errorDetail: "Detailed network error"
+            } );
+
+            assert.equal( watchFiles.watchedFileErrorCallback.callCount, 1 );
+            assert.deepEqual( watchFiles.log.lastCall.args, [
+              "error",
+              "file-content-sentinel-error",
+              { errorCode: "E000000215" },
+              {
+                watchType: "rise-content-sentinel",
+                errorMessage: "Network error",
+                errorDetail: "Detailed network error",
+                storage: {
+                  configuration: "storage file",
+                  file_form: "jpg",
+                  file_path: "foo.jpg",
+                  local_url: sampleUrl( "foo.jpg" )
+                }
+              }
+            ]);
+            assert.equal (watchFiles.managedFiles.length, 1 );
+            assert.equal (watchFiles._managedFilesInError.length, 1 );
+
+            RisePlayerConfiguration.Helpers.useContentSentinel = () => { return false; }
 
             done();
           });
@@ -147,6 +186,7 @@
             "file-insufficient-disk-space-error",
             { errorCode: "E000000040" },
             {
+              watchType: null,
               errorMessage: "Insufficient disk space",
               errorDetail: "",
               storage: {
@@ -187,6 +227,7 @@
             "file-not-found",
             { errorCode: "E000000014" },
             {
+              watchType: null,
               errorMessage: undefined,
               errorDetail: undefined,
               storage: {
