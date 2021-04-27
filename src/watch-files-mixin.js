@@ -40,7 +40,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
     watchedFileErrorCallback() {}
 
     _manageFileInError( details, fixed ) {
-      const { filePath, params } = details;
+      const { filePath } = details;
 
       if ( !filePath ) {
         return;
@@ -48,17 +48,14 @@ export const WatchFilesMixin = dedupingMixin( base => {
 
       let fileInError = this._getManagedFileInError( filePath );
 
-      if ( fixed && fileInError ) {
+      if ( fileInError ) {
         // remove this file from files in error list
         this._managedFilesInError.splice( this._managedFilesInError.findIndex( file => file.filePath === filePath ), 1 );
-      } else if ( !fixed ) {
-        if ( !fileInError ) {
-          fileInError = { filePath, params };
-          // add this file to list of files in error
-          this._managedFilesInError.push( fileInError );
-        } else {
-          fileInError.params = params;
-        }
+      }
+
+      // if not fixed, then add it to the list
+      if ( !fixed ) {
+        this._managedFilesInError.push( details );
       }
     }
 
@@ -178,7 +175,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
       // prevent repetitive logging when component instance is receiving messages from other potential component instances watching same file
       // Note: to avoid using Lodash or Underscore library for just a .isEqual() function, taking a simple approach to object comparison with JSON.stringify()
       // as the property order will not change and the data is not large for this object
-      if ( fileInError && ( JSON.stringify( details ) === JSON.stringify( fileInError.details ))) {
+      if ( fileInError && ( JSON.stringify( details ) === JSON.stringify( fileInError ))) {
         return;
       }
 
