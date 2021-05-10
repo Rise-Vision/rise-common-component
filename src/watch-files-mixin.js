@@ -148,6 +148,8 @@ export const WatchFilesMixin = dedupingMixin( base => {
         details = { filePath, errorMessage: message.errorMessage, errorDetail: message.errorDetail },
         fileInError = this._getManagedFileInError( filePath ),
         isFileNotFound = "NOEXIST" === message.status.toUpperCase() && !message.errorMessage,
+        isInsufficientDiskSpace = message.errorMessage && message.errorMessage.toLowerCase().includes( "insufficient disk space" ),
+        isInsufficientQuota = message.errorMessage && message.errorMessage.toLowerCase().includes( "insufficient quota" ),
         errors = [ {
           name: "file-not-found",
           code: "E000000014"
@@ -166,7 +168,7 @@ export const WatchFilesMixin = dedupingMixin( base => {
 
       if ( isFileNotFound ) {
         error = errors[ 0 ];
-      } else if ( message.errorMessage && message.errorMessage.toLowerCase().includes( "insufficient disk space" )) {
+      } else if ( isInsufficientDiskSpace || isInsufficientQuota ) {
         error = errors[ 1 ];
       } else {
         error = this._watchType === WatchFiles.WATCH_TYPE_RLS ? errors[ 2 ] : errors[ 3 ];
