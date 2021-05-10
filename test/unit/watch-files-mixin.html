@@ -197,6 +197,31 @@
               }
             }
           ]);
+
+          watchFiles._handleSingleFileError( {
+            status: "FILE-ERROR",
+            filePath: "baz.mp4",
+            fileUrl: sampleUrl( "baz.mp4" ),
+            errorMessage: "Insufficient quota",
+            errorDetail: ""
+          } );
+
+          assert.deepEqual( watchFiles.log.lastCall.args, [
+            "error",
+            "file-insufficient-disk-space-error",
+            { errorCode: "E000000040" },
+            {
+              watchType: null,
+              errorMessage: "Insufficient quota",
+              errorDetail: "",
+              storage: {
+                configuration: "storage file",
+                file_form: "mp4",
+                file_path: "baz.mp4",
+                local_url: sampleUrl( "baz.mp4" )
+              }
+            }
+          ]);
         } );
 
         test( "should handle deleting files", (done) => {
