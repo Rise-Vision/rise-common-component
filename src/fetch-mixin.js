@@ -70,9 +70,9 @@ export const FetchMixin = dedupingMixin( base => {
       return this._tryGetCache().then( resp => {
         this._logData( true );
 
-        this._processData( Object.assign( resp.clone(), { isCached: true }));
+        this._processData( Object.assign( resp, { isCached: true }));
       }).catch(( cachedResp ) => {
-        cachedResp = cachedResp && cachedResp.clone ? Object.assign( cachedResp.clone(), { isCached: true }) : null;
+        cachedResp = cachedResp ? Object.assign( cachedResp, { isCached: true }) : null;
 
         this._requestData( cachedResp );
       });

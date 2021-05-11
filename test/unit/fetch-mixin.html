@@ -114,13 +114,16 @@
 
     suite( "_getData", () => {
       test( "should get the result from cache", done => {
-        cacheMixin.getCache = sinon.stub().resolves( new Response("text") );
+        const response = new Response("text");
+        Object.defineProperty( response, "url", { value: "www.risevision.com" });
+        cacheMixin.getCache = sinon.stub().resolves( response );
         sinon.stub(fetchMixin, "_requestData");
 
         fetchMixin._getData().then(() => {
           assert.isTrue( cacheMixin.getCache.called );
           assert.isTrue( handleResponse.called );
           assert.isFalse( fetchMixin._requestData.called );
+          assert.equal( handleResponse.getCall(0).args[0].url, "www.risevision.com" );
 
           handleResponse.getCall(0).args[0].text().then( text => {
             assert.equal( text, "text" );

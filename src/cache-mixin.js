@@ -9,6 +9,12 @@ export const CacheMixin = dedupingMixin( base => {
     },
     cacheBase = LoggerMixin( base );
 
+  class CacheUtils {
+    static _setResponseUrl( response, url ) {
+      Object.defineProperty( response, "url", { value: url });
+    }
+  }
+
   class LocalStorageFallback {
     open( namespace ) {
       const getFullKey = key => {
@@ -49,7 +55,7 @@ export const CacheMixin = dedupingMixin( base => {
             response = new Response( new Blob([ cacheObject.text ]), init );
 
           if ( cacheObject.url ) {
-            Object.defineProperty( response, "url", { value: cacheObject.url });
+            CacheUtils._setResponseUrl( response, cacheObject.url );
           }
 
           return response;
@@ -152,6 +158,20 @@ export const CacheMixin = dedupingMixin( base => {
       }
     }
 
+    _cloneResponse( response ) {
+      let result = null;
+
+      if ( response && ( response instanceof Response )) {
+        result = response.clone();
+
+        // If "url" property was not cloned, then set it manually.
+        if ( !result.url ) {
+          CacheUtils._setResponseUrl( result, response.url );
+        }
+      }
+      return result;
+    }
+
     /*
      The intention of getCacheRequestKey and getCacheResponseKey functions below is they can be overridden by a component to customize
      the key for a cache entry. The main purpose of using this is when you want to pair a response with a custom string
@@ -185,10 +205,12 @@ export const CacheMixin = dedupingMixin( base => {
           _cache = cache;
           return cache.match( this.getCacheRequestKey( url ));
         }).then( response => {
+          const responseCopy = this._cloneResponse( response );
+
           if ( !this._isResponseExpired( response, this.cacheConfig.refresh )) {
-            return Promise.resolve( response );
+            return Promise.resolve( responseCopy );
           } else if ( !this._isResponseExpired( response, this.cacheConfig.expiry )) {
-            return Promise.reject( response );
+            return Promise.reject( responseCopy );
           } else if ( _cache ) {
             response && _cache.delete( url );
             return Promise.reject();
