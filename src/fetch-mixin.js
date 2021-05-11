@@ -70,9 +70,9 @@ export const FetchMixin = dedupingMixin( base => {
       return this._tryGetCache().then( resp => {
         this._logData( true );
 
-        this._processData( Object.assign( resp.clone(), { isCached: true }));
+        this._processData( Object.assign( this._cloneResponse( resp ), { isCached: true }));
       }).catch(( cachedResp ) => {
-        cachedResp = cachedResp && cachedResp.clone ? Object.assign( cachedResp.clone(), { isCached: true }) : null;
+        cachedResp = cachedResp && cachedResp.clone ? Object.assign( this._cloneResponse( cachedResp ), { isCached: true }) : null;
 
         this._requestData( cachedResp );
       });
@@ -200,6 +200,20 @@ export const FetchMixin = dedupingMixin( base => {
       }
 
       return this._requestRetryCount < this.fetchConfig.count;
+    }
+
+    _cloneResponse( response ) {
+
+      const result = response.clone();
+
+      // If response was created manually using new Response() and
+      // response.url was assigned using Object.defineProperty,
+      // then response.clone() won't clone the "url" property.
+      if ( !result.url && response.url ) {
+        Object.defineProperty( result, "url", { value: response.url });
+      }
+
+      return result;
     }
 
   }
