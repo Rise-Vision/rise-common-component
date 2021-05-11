@@ -138,10 +138,13 @@
         caches.open.resolves(cachesOpen);
 
         cache.getCache().then( data => {
-          assert.equal( data, cachedData );
-
-          done();
-        }).catch( error => {
+          return data.text();
+        })
+        .then( text => {
+            assert.equal( text, validXmlData );
+            done();
+          })
+        .catch( error => {
           done(error);
         });
       });
@@ -160,9 +163,10 @@
           done("error");
         }).catch((response) => {
           assert.isFalse( cachesOpen.delete.called );
-          assert.equal( response, cachedData );
-
-          done();
+          response.text().then( text => {
+            assert.equal( text, validXmlData );
+            done();
+          });
         });
       });
 
