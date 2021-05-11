@@ -205,10 +205,12 @@ export const CacheMixin = dedupingMixin( base => {
           _cache = cache;
           return cache.match( this.getCacheRequestKey( url ));
         }).then( response => {
+          const responseCopy = this._cloneResponse( response );
+
           if ( !this._isResponseExpired( response, this.cacheConfig.refresh )) {
-            return Promise.resolve( response );
+            return Promise.resolve( responseCopy );
           } else if ( !this._isResponseExpired( response, this.cacheConfig.expiry )) {
-            return Promise.reject( response );
+            return Promise.reject( responseCopy );
           } else if ( _cache ) {
             response && _cache.delete( url );
             return Promise.reject();
