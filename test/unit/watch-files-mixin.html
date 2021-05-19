@@ -278,6 +278,13 @@
         watchFiles.watchedFileAddedCallback.restore();
       } );
 
+      test( "_getAllIndexesOfFile() should return array of indexes with provided filePath", () => {
+        assert.deepEqual(watchFiles._getAllIndexesOfFile([]), []);
+        assert.deepEqual(watchFiles._getAllIndexesOfFile([], "test.jpg"), []);
+        assert.deepEqual(watchFiles._getAllIndexesOfFile(["test1.png", "test2.png", "test3.png"], "test2.png"), [1]);
+        assert.deepEqual(watchFiles._getAllIndexesOfFile(["test1.png", "test2.png", "test1.png", "test3.png"], "test1.png"), [0, 2]);
+      } )
+
       test( "should preserve order of files that come in out of order", done => {
         const delays = {
           "a.jpg": 50,
@@ -303,6 +310,46 @@
             assert.equal( watchFiles.getManagedFile( "a.jpg" ).order, 0);
             assert.equal( watchFiles.getManagedFile( "b.jpg" ).order, 1);
             assert.equal( watchFiles.getManagedFile( "c.jpg" ).order, 2);
+
+            RisePlayerConfiguration.LocalStorage.watchSingleFile.restore();
+            done();
+          }, maxDelay );
+        });
+      } );
+
+      test( "should handle file duplicates and order correctly", done => {
+        const delays = {
+          "a.jpg": 50,
+          "b.jpg": 100,
+          "c.jpg": 0
+        };
+        const maxDelay = 100;
+
+        sinon.stub( RisePlayerConfiguration.LocalStorage, "watchSingleFile" ).callsFake( (file, handler) => {
+          setTimeout( () => {
+            handler( { status: "CURRENT", filePath: file, fileUrl: sampleUrl( file ) } );
+          }, delays[file]) ;
+        } );
+
+        watchFiles.startWatch( [ "a.jpg", "b.jpg", "a.jpg", "c.jpg", "b.jpg", "a.jpg", "c.jpg" ] ).then(() => {
+          setTimeout( () => {
+            const addedCalls = watchFiles.watchedFileAddedCallback.getCalls();
+
+            assert.isTrue( addedCalls[0].calledWithExactly( { filePath: "c.jpg" } ) );
+            assert.isTrue( addedCalls[1].calledWithExactly( { filePath: "c.jpg" } ) );
+            assert.isTrue( addedCalls[2].calledWithExactly( { filePath: "a.jpg" } ) );
+            assert.isTrue( addedCalls[3].calledWithExactly( { filePath: "a.jpg" } ) );
+            assert.isTrue( addedCalls[4].calledWithExactly( { filePath: "a.jpg" } ) );
+            assert.isTrue( addedCalls[5].calledWithExactly( { filePath: "b.jpg" } ) );
+            assert.isTrue( addedCalls[6].calledWithExactly( { filePath: "b.jpg" } ) );
+
+            assert.equal( watchFiles.managedFiles[0].filePath, "a.jpg");
+            assert.equal( watchFiles.managedFiles[1].filePath, "b.jpg");
+            assert.equal( watchFiles.managedFiles[2].filePath, "a.jpg");
+            assert.equal( watchFiles.managedFiles[3].filePath, "c.jpg");
+            assert.equal( watchFiles.managedFiles[4].filePath, "b.jpg");
+            assert.equal( watchFiles.managedFiles[5].filePath, "a.jpg");
+            assert.equal( watchFiles.managedFiles[6].filePath, "c.jpg");
 
             RisePlayerConfiguration.LocalStorage.watchSingleFile.restore();
             done();
