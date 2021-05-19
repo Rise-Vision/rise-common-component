@@ -39,6 +39,15 @@ export const WatchFilesMixin = dedupingMixin( base => {
 
     watchedFileErrorCallback() {}
 
+    _getAllIndexesOfFile( arr, filePath ) {
+      return arr.reduce(( indexes, val, index ) => {
+        if ( val === filePath ) {
+          indexes.push( index );
+        }
+        return indexes;
+      }, []);
+    }
+
     _manageFileInError( details, fixed ) {
       const { filePath } = details;
 
@@ -66,21 +75,26 @@ export const WatchFilesMixin = dedupingMixin( base => {
 
       if ( status.toUpperCase() === "CURRENT" ) {
         if ( !managedFile ) {
-          // get the order that this file should be in from _filesList
-          const order = this._filesList.findIndex( path => path === filePath );
+          // get all index values of this file from _filesList
+          const indexes = this._getAllIndexesOfFile( this._filesList, filePath );
 
-          managedFile = { filePath, fileUrl, order };
+          indexes.forEach(( index ) => {
+            this.managedFiles.push({ filePath, fileUrl, order: index });
+          });
 
-          // add this file to list
-          this.managedFiles.push( managedFile );
+          managedFile = this.getManagedFile( filePath );
         } else {
           // file has been updated
-          managedFile.fileUrl = fileUrl;
+          this.managedFiles.forEach(( file ) => {
+            if ( file.filePath === filePath ) {
+              file.fileUrl = fileUrl;
+            }
+          });
         }
       }
 
       if ( status.toUpperCase() === "DELETED" && managedFile ) {
-        this.managedFiles.splice( this.managedFiles.findIndex( file => file.filePath === filePath ), 1 );
+        this.managedFiles = this.managedFiles.filter( file => file.filePath !== filePath );
       }
 
       // sort the managed files based on order value
