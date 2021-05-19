@@ -94,7 +94,6 @@ export const WatchFilesMixin = dedupingMixin( base => {
       }
 
       if ( status.toUpperCase() === "DELETED" && managedFile ) {
-        //this.managedFiles.splice( this.managedFiles.findIndex( file => file.filePath === filePath ), 1 );
         this.managedFiles = this.managedFiles.filter( file => file.filePath !== filePath );
       }
 
