@@ -126,6 +126,13 @@ export const WatchFilesMixin = dedupingMixin( base => {
         return Promise.reject();
       }
 
+      // account for the component running in editor preview OR running locally in browser
+      if ( RisePlayerConfiguration.Helpers.isEditorPreview() || !RisePlayerConfiguration.Helpers.isInViewer()) {
+        // ensure files list is set for component file management usage
+        this._filesList = filesList.slice( 0 );
+        return Promise.reject();
+      }
+
       if ( !this._watchInitiated ) {
         this._watchType = this._getWatchType();
 
