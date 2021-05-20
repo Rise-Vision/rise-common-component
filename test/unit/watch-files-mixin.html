@@ -37,7 +37,9 @@
     },
     Helpers: {
       useContentSentinel: () => false,
-      isDisplay: () => true
+      isDisplay: () => true,
+      isEditorPreview: () => false,
+      isInViewer: () => true
     },
     LocalMessaging: {
       isConnected: () => true
@@ -414,6 +416,21 @@
           assert.isFalse( watchFiles._watchInitiated );
 
           RisePlayerConfiguration.LocalMessaging.isConnected = () => { return true; }
+          done();
+        });
+      } );
+
+      test( "should reject if running in editor preview or locally in browser", (done) => {
+        const files = [ "a.jpg", "b.jpg" ];
+
+        RisePlayerConfiguration.Helpers.isEditorPreview = () => { return true; }
+
+        watchFiles.startWatch( files ).catch(() => {
+          assert.isFalse( watchFiles._watchInitiated );
+          // confirm files list is set
+          assert.deepEqual( watchFiles._filesList, [ "a.jpg", "b.jpg" ] );
+
+          RisePlayerConfiguration.Helpers.isEditorPreview = () => { return false; }
           done();
         });
       } );
