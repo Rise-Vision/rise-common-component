@@ -157,6 +157,8 @@
           assert.isFalse( handleResponse.called );
 
           assert.isTrue( fetchMixin._requestData.called );
+          //confirm _requestData is called with null and not promise reject object returned by getCache()
+          assert.isTrue( fetchMixin._requestData.calledWith(null), "_requestData" );
 
           done();
         });
